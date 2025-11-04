@@ -1,0 +1,6399 @@
+schema {
+  query: RootQuery
+  mutation: RootMutation
+}
+
+"A Security"
+type ScpiShare implements Security {
+  id: ID!
+  type: SecurityType!
+  securityType: SecurityType! @deprecated(reason: "Use `type`")
+  securityTypeDetailed: SecurityTypeDetailed!
+  name: String!
+  stakes: [Stake]!
+  company: Company!
+  nominalValue: Amount!
+  distributionPeriodicity: DistributionPeriodicityDetailed!
+  securityFeePatterns: [SecurityFeePattern!]!
+  defaultSecurityFeePattern: SecurityFeePattern
+  numberOfDecimals: Float!
+  latestValue: SecurityValue
+  remainingParticipations(
+    resultsPerPage: Int
+    page: Int = 1
+
+    "Term to search in id, firstname, lastname, email or mobile"
+    search: String
+
+    "Flag to define whether the usufruct participations should be returned or not"
+    excludeUsufruct: Boolean = false
+  ): RemainingParticipationConnection
+  securityValues: [SecurityValue]
+  engagedInvestmentAmount: Amount
+  movements(
+    resultsPerPage: Int
+    page: Int = 1
+    transactionTypes: [TransactionType!]
+
+    "Term to search in id, firstname, lastname, email or mobile"
+    search: String
+
+    sortingFields: [SortingField] = []
+  ): TransactionMoneyMovementConnection
+  effectiveDateDelayInMonths: Int
+  effectiveDateDelayInDays: Int
+  enteredIntoAccountDocumentTemplate: DocumentTemplate
+  dismembermentKeys: [ScpiShareDismembermentKey]
+  pairedDismemberments(
+    resultsPerPage: Int
+    page: Int = 1
+
+    "Term to search in usufruct or bareownership account's labels"
+    search: String
+  ): PairedDismembermentsConnection
+  hasSecurityOperationInvestmentScheduledSubscriptionsFullOwnership: Boolean!
+  hasSecurityOperationInvestmentScheduledSubscriptionsBareOwnership: Boolean!
+}
+
+"A Security"
+interface Security {
+  id: ID!
+  type: SecurityType!
+  securityType: SecurityType! @deprecated(reason: "Use `type`")
+  securityTypeDetailed: SecurityTypeDetailed!
+  name: String!
+  stakes: [Stake]!
+  company: Company!
+  nominalValue: Amount!
+  distributionPeriodicity: DistributionPeriodicityDetailed!
+  securityFeePatterns: [SecurityFeePattern!]!
+  defaultSecurityFeePattern: SecurityFeePattern
+  numberOfDecimals: Float!
+  latestValue: SecurityValue
+  remainingParticipations(
+    resultsPerPage: Int
+    page: Int = 1
+
+    "Term to search in id, firstname, lastname, email or mobile"
+    search: String
+
+    "Flag to define whether the usufruct participations should be returned or not"
+    excludeUsufruct: Boolean = false
+  ): RemainingParticipationConnection
+  securityValues: [SecurityValue]
+  engagedInvestmentAmount: Amount
+  movements(
+    resultsPerPage: Int
+    page: Int = 1
+    transactionTypes: [TransactionType!]
+
+    "Term to search in id, firstname, lastname, email or mobile"
+    search: String
+
+    sortingFields: [SortingField] = []
+  ): TransactionMoneyMovementConnection
+}
+
+enum SecurityType {
+  OBLIGATION
+  FUND_SHARE
+  SCPI_SHARE
+  SHARE
+  CONVERTIBLE_OBLIGATION
+}
+
+type SecurityTypeDetailed {
+  code: SecurityType!
+  label: String!
+}
+
+"A Stake"
+type Stake {
+  id: ID!
+  stakerName: String!
+  securitiesNumber: Float!
+}
+
+"A Company"
+interface Company {
+  id: ID!
+  corporateAccount: CompanyAccount!
+  securities: [Security]
+  risk: Int
+  logo: Document
+  companyDocuments: [CompanyDocument]
+  communications: [Communication]
+}
+
+interface Account {
+  id: ID!
+  createdAt: DateTime!
+  documentControls: [AccountDocumentControl]
+  mostRecentVialinkControl: VialinkControl
+  label: String!
+  type: AccountType! @deprecated(reason: "Use `accountType`")
+  accountType: AccountTypeDetailed!
+  lcbftLevel: LcbftLevel! @deprecated(reason: "Use investorInfo.lcbftLevel instead")
+  lcbftLevelDetailed: LcbftLevelDetailed! @deprecated(reason: "Use investorInfo.lcbftLevelDetailed instead")
+  kycExpirationDate: DateTime
+  kycStatus: KycStatus! @deprecated(reason: "use kycStatusDetailed instead")
+  kycStatusDetailed: KycStatusDetailed!
+  kycRefusedComment: String
+  investorInfo: InvestorInfo!
+  user(
+    "Optional user ID to return instead of the account's default user"
+    userId: ID
+  ): User
+  canValidateKyc: Boolean
+  kycAnalysisResult: Array
+  accountDocuments: [AccountDocument]
+  bankAccounts: [BankAccount]
+  bankAccountByBankAccountType(
+    bankAccountType: BankAccountType!
+
+    "If true, will return the default bank account if no bank account of the given type is found"
+    fallbackToDefault: Boolean = false
+  ): BankAccount
+  accountSecurityContracts: [AccountSecurityContract]
+  investmentsAndTransfers(securityId: ID, transactionMoneyMovementState: TransactionMoneyMovementState): [Transaction]
+  investments(operationStates: [OperationState]): [Investment]
+  cessions(securityId: ID): [Cession]
+  countryRisk: LcbftLevel! @deprecated(reason: "Use countryRiskDetailed instead")
+  activitySectorRisk: LcbftLevel! @deprecated(reason: "Use activitySectorRiskDetailed instead")
+  relationshipRisk: LcbftLevel! @deprecated(reason: "Use relationshipRiskDetailed instead")
+  ppeRisk: LcbftLevel! @deprecated(reason: "Use ppeRiskDetailed instead")
+  sanctionsRisk: LcbftLevel! @deprecated(reason: "Use sanctionsRiskDetailed instead")
+  countryRiskDetailed: LcbftLevelDetailed!
+  activitySectorRiskDetailed: LcbftLevelDetailed!
+  relationshipRiskDetailed: LcbftLevelDetailed!
+  ppeRiskDetailed: LcbftLevelDetailed!
+  sanctionsRiskDetailed: LcbftLevelDetailed!
+  adequate: Boolean
+  distributedByAdvisor: DistributorAdvisor
+  signedDocuments: [AccountDocumentControl]
+  signersStatuses: [SignerStatus!]!
+  history(
+    "One of 'account', 'kyc' or 'lcbft'"
+    type: String!
+  ): [AccountLogHistory]!
+  kycStep: ConfigurableFormStep
+  accountComments: [AccountComment]
+  accountPersona: AccountPersonaDetailed!
+  suggestedExpirationDate: DateTime
+  portfolio(
+    "The portfolio will be rendered as the state it was at this date"
+    visualizationDate: Date
+  ): Portfolio
+}
+
+scalar DateTime
+
+"A document control enriched with the account KycQuestion"
+type AccountDocumentControl {
+  id: ID
+  documentControl: DocumentControl
+  required: Boolean!
+  label: String!
+  kycQuestion: ConfigurableFormQuestion
+}
+
+"A document control"
+type DocumentControl {
+  id: ID!
+  status: DocumentControlStatusDetailed!
+  document: Document
+  vialinkData: Array
+  complianceControls: [ComplianceControl]
+  activeComplianceControl(accountId: ID!): ComplianceControl
+  accountLinked: Account
+  expiresOn: DateTime
+  signatureDateTime: DateTime
+}
+
+type DocumentControlStatusDetailed {
+  code: DocumentControlStatus!
+  label: String!
+}
+
+enum DocumentControlStatus {
+  TO_COMPLETE
+  COMPLETED
+  VALIDATED
+  REFUSED
+  Expired
+}
+
+"A document"
+type Document {
+  id: ID!
+  contentType: String
+  signedUrl: String!
+  name: String!
+  displayedName: String
+  createdAt: DateTime!
+  documentGenerated: DocumentGenerated @deprecated(reason: "Use documentsGenerated")
+  documentsGenerated: [DocumentGenerated]
+  accountDocuments: [AccountDocument]
+  documentControl: DocumentControl
+}
+
+"A generated document"
+type DocumentGenerated {
+  id: ID!
+  document: Document
+  documentTemplate: DocumentTemplate
+  signatureDateTime: DateTime
+  yousignSignatureRequestId: String
+}
+
+"A Document Template"
+interface DocumentTemplate {
+  id: ID
+  name: String
+  localizedName: [LocalizedString]
+  type: DocumentTypeDetailed
+  fields: Array
+}
+
+type LocalizedString {
+  locale: SupportedLocale!
+  value: String!
+}
+
+enum SupportedLocale {
+  fr_FR
+  en_US
+}
+
+type DocumentTypeDetailed {
+  code: DocumentType!
+  label: String!
+}
+
+enum DocumentType {
+  MISSION_LETTER
+  SUBSCRIPTION_FORM
+  GENERAL_MEETING_MINUTES
+  SIGNATURE_CERTIFICATE
+  ENTERED_INTO_ACCOUNT
+  TAX_REDUCTION_IR_ATTESTATION
+  ELIGIBILITY_PEA
+  ELIGIBILITY_PEAPME
+  ELIGIBILITY_APPORT_CESSION
+  INVESTOR_CATEGORIZATION
+  KYC_DOCUMENT
+  CESSION_ATTESTATION
+  DISTRIBUTION_ATTESTATION
+  TRANSFER_ATTESTATION
+  CAPITAL_CALL_NOTICE
+  PAYMENT_ATTESTATION
+  VESTING_CONTRACT
+  ADEQUACY_REPORT
+  Invoice
+  PledgeAgreement
+  PledgeReleaseAgreement
+  GeneralAssemblyConvening
+  GeneralAssemblyMandate
+  FUNDS_ORIGIN
+  Other
+  PROOF_OF_ADDRESS
+  COSUBSCRIBER_PROOF_OF_ADDRESS
+  AUTOMATIC_DEBIT_RIB
+  DIVIDEND_RIB
+  DISTRIBUTION_AGREEMENT
+}
+
+scalar Array
+
+"An Account document"
+type AccountDocument implements DocumentVisibilityForInvestor {
+  visibleByInvestor: Boolean!
+  id: ID!
+  document: Document!
+  account: Account!
+}
+
+interface DocumentVisibilityForInvestor {
+  visibleByInvestor: Boolean!
+}
+
+type ComplianceControl {
+  id: ID!
+  viaLinkControl: VialinkControl!
+  documentControl: DocumentControl
+  level: ComplianceControlLevel! @deprecated(reason: "Use levelDetailed instead")
+  levelDetailed: ComplianceControlLevelDetailed!
+  source: String!
+  comment: String
+  failedData: Array! @deprecated(reason: "Use `failedChecks`")
+  failedChecks: [ComplianceControlCheck]!
+  user: User!
+  isAlert: Boolean!
+}
+
+type VialinkControl {
+  id: ID!
+  control: Array!
+  generatedReportDocument: Document
+  activeComplianceControls: [ComplianceControl]
+  activeAlerts: [ComplianceControl]
+  account: Account!
+}
+
+enum ComplianceControlLevel {
+  Level0
+  Level1
+  Level2
+}
+
+type ComplianceControlLevelDetailed {
+  code: ComplianceControlLevel!
+  label: String!
+}
+
+type ComplianceControlCheck {
+  code: String!
+  label: String!
+  value: Mixed
+}
+
+scalar Mixed
+
+"A User"
+interface User {
+  id: ID
+  active: Boolean
+  email: String!
+  lastLogin: DateTime
+  mobile: String
+  firstName: String!
+  lastName: String!
+  persona: Persona!
+  personaDetailed: PersonaDetailed!
+  accounts: [Account]!
+  roles: [String]
+  emailsInCopy: [String]
+  isPasswordDefined: Boolean
+  portfolio(
+    "The portfolio will be rendered as the state it was at this date"
+    visualizationDate: Date
+
+    "The account Id"
+    accountId: ID
+  ): Portfolio
+  unactiveComment: String
+  acceptedAt: DateTime
+  createdAt: DateTime
+  userSegments: [UserSegment]
+  segments: [Segment]
+  distributedByAdvisor: DistributorAdvisor @deprecated(reason: "The advisor is now on the Account object")
+  distributedBy: Distributor @deprecated(reason: "The advisor is now on the Account object")
+  representedDistributorNetwork: DistributorNetwork
+  tosAcknowledgedAt: DateTime
+  locale: SupportedLocale
+  localeDetailed: SupportedLocaleDetailed
+  signupUrlParameters: UrlParameters
+}
+
+enum Persona {
+  ADMIN
+  CUSTOMER
+  DISTRIBUTOR
+  DistributorAdvisor
+  DistributorNetwork
+  DISTRIBUTED_CUSTOMER
+  HYPER_ADMIN
+  SUPER_ADMIN
+}
+
+type PersonaDetailed {
+  code: Persona!
+  label: String!
+  isAdmin: Boolean!
+  isDistributorAdvisor: Boolean!
+  isDistributor: Boolean!
+  isDistributorNetwork: Boolean!
+  isVasco: Boolean!
+  isCustomer: Boolean!
+  isDistributedCustomer: Boolean!
+}
+
+scalar Date
+
+"A Portfolio"
+type Portfolio {
+  pending: [PortfolioPendingTransaction]
+  active: [ActiveParticipation]
+  sold: [SoldParticipation]
+  pendingParticipationsKpisValues(datatableTechnicalCode: String = "portfolio:pending", additionalData: Array): [KpiValue]
+  activeParticipationsKpisValues(datatableTechnicalCode: String = "portfolio:active", additionalData: Array): [KpiValue]
+  soldParticipationsKpisValues(datatableTechnicalCode: String = "portfolio:sold", additionalData: Array): [KpiValue]
+}
+
+"A Portfolio Pending Transaction"
+type PortfolioPendingTransaction {
+  id: ID
+  lastOperation: Operation
+  issuerId: String
+  issuerName: String
+  issuerLogo: Document
+  taxationType: TaxationTypeDetailed!
+  investedCapital: Amount
+  subscriptionDateTime: DateTime
+  paymentDateTime: DateTime
+  calledCapitalAmount: Amount
+  remainingToBeCalledAmount: Amount
+  transactionState: TransactionState
+  percentageOwned: Float
+  lastValue: Amount!
+  effectiveDate: DateTime
+  account: Account
+  remainingSecuritiesCount: Float
+  security: Security!
+}
+
+"An Operation"
+type Operation {
+  id: ID!
+  name: String!
+  state: OperationStateDetailed!
+  operationFinancingInfo: OperationFinancingInfo!
+  operationDocuments: [OperationDocument]
+  collectedAmount: Amount!
+  description: String
+  descriptionState: OperationDescriptionState @deprecated(reason: "Use operationDescriptionState instead")
+  localizedDescription: [LocalizedString]
+  operationDescriptionState: OperationDescriptionStateDetailed
+  thumbnail: Document
+  subscriptionSignedByDistributor: Boolean
+  securityOperationInvestmentWithoutDocuments: Boolean!
+  securityOperationInvestments: [SecurityOperationInvestment]
+  openedSecurityOperationInvestmentsSimpleSubscription: [SecurityOperationInvestment]
+  openedSecurityOperationInvestments: [SecurityOperationInvestment]
+  kycStatusForSignature: KycStatus
+  openedToCosubscription: Boolean
+  subscriptionSignedByThirdParty: Boolean!
+  subscriptionSignerThirdPartyFirstName: String
+  subscriptionSignerThirdPartyLastName: String
+  subscriptionSignerThirdPartyEmail: String
+  subscriptionSignerThirdPartyMobile: String
+  subscriptionSignedBySecondThirdParty: Boolean!
+  subscriptionSignerSecondThirdPartyFirstName: String
+  subscriptionSignerSecondThirdPartyLastName: String
+  subscriptionSignerSecondThirdPartyEmail: String
+  subscriptionSignerSecondThirdPartyMobile: String
+  subscriptionForm: ConfigurableForm @deprecated(reason: "Use `modalitiesForm`")
+  modalitiesForm: ConfigurableForm
+  hasModalitiesForm: Boolean!
+  hasConsultancyFees: Boolean!
+  kpiValues: [KpiValue]
+  needsValidation: Boolean
+  subscribedAtUnknownNav: Boolean!
+  includedSegments: [OperationIncludedSegment]
+  excludedSegments: [OperationExcludedSegment]
+  preferredSignatureMethod: SignatureMethodDetailed
+  alternativeSignatureMethods: [SignatureMethodDetailed]
+}
+
+type OperationStateDetailed {
+  code: OperationState!
+  label: String!
+}
+
+enum OperationState {
+  BEFORE_LAUNCH
+  PRE_SUBSCRIPTION_OPENED
+  SUBSCRIPTION_OPEN
+  SUBSCRIPTION_ENDED
+}
+
+"An Operation Financing Info"
+type OperationFinancingInfo {
+  id: ID!
+  type: OperationType!
+  operationType: OperationTypeDetailed!
+  issuer: Company!
+  targetAmount: Amount!
+  issuedSecurities: Int!
+  taxation: [String]
+  indicators: [LabelValue]
+  localizedIndicators: [LocalizedOperationFinancingInfoIndicator]
+
+  "Compute the minimum subscription upon specified user, account or on general basis"
+  minimumSubscriptionAmount(accountId: ID, userId: ID): Amount!
+
+  paymentMethods: [PaymentMethod]
+  bankWireReference: String
+  urmReference: String
+  checkOrder: String
+  bankAccount: BankAccount
+  operation: Operation!
+}
+
+enum OperationType {
+  ACTIF_DE_FONCIERE
+  ASSURANCE_VIE_FRANCAISE
+  ASSURANCE_VIE_LUXEMBOURGEOISE
+  CLUB_DEAL_IMMOBILIER
+  CLUB_DEAL_VC
+  FOND_INVESTISSEMENT
+  MARCHE_SECONDAIRE
+  SCPI
+}
+
+type OperationTypeDetailed {
+  code: OperationType!
+  label: String!
+}
+
+scalar Amount
+
+type LabelValue {
+  label: String!
+  value: String!
+}
+
+type LocalizedOperationFinancingInfoIndicator {
+  locale: SupportedLocale!
+  value: [OperationFinancingInfoIndicator]
+}
+
+type OperationFinancingInfoIndicator {
+  label: String!
+  value: String!
+}
+
+enum PaymentMethod {
+  CreditTransfer
+  DirectDebit
+  BankCheck
+}
+
+type BankAccount {
+  id: ID!
+  account: Account
+  iban: String
+  bic: String
+  holderName: String
+  bankName: String
+  status: BankAccountStatusDetailed
+  documentControl: DocumentControl
+  bankAccountType: BankAccountTypeDetailed!
+  countryLocation: Country
+  countryRisk: LcbftLevel
+  countryRiskDetailed: LcbftLevelDetailed
+  customProperties: [BankAccountCustomProperty]
+  externalProvider: ProviderTypeDetailed
+  externalId: String
+  activeExternalProvider: Boolean
+}
+
+type BankAccountStatusDetailed {
+  code: BankAccountStatus!
+  label: String!
+}
+
+enum BankAccountStatus {
+  Valid
+  Invalid
+}
+
+type BankAccountTypeDetailed {
+  code: BankAccountType!
+  label: String!
+}
+
+enum BankAccountType {
+  AccountCreditTransfer
+  AccountDirectDebit
+  AccountRetrocessionDebit
+  AccountPea
+  AccountPeaPme
+  OperationBankAccount
+  BrokerageAccount
+}
+
+type Country {
+  id: ID!
+  country: String!
+  countryCode: String!
+  countryShort: String!
+  sortIndex: Int!
+  countryRiskCode: CountryRiskCodeDetailed!
+}
+
+type CountryRiskCodeDetailed {
+  code: CountryRiskCode!
+  label: String!
+}
+
+enum LcbftLevel {
+  MINIMUM_RISK
+  LOW_RISK
+  MEDIUM_RISK
+  HIGH_RISK
+  MAXIMUM_RISK
+}
+
+type LcbftLevelDetailed {
+  code: LcbftLevel!
+  label: String!
+}
+
+type BankAccountCustomProperty {
+  entityProperty: EntityProperty
+  value: Array
+}
+
+"Custom properties for this entity"
+interface EntityProperty {
+  id: ID!
+  type: EntityPropertyTypeDetailed!
+  entityName: EntityNameDetailed!
+  technicalCode: String!
+  code: String! @deprecated(reason: "Use `technicalCode`")
+  name: String!
+  dataStrategy: EntityPropertyDataStrategyDetailed!
+  dataStrategyDefinition: String
+  createdBy: String!
+  createdAt: DateTime!
+  editable: Boolean!
+  specificTreatment: EntityPropertySpecificTreatmentDetailed
+}
+
+type EntityPropertyTypeDetailed {
+  code: EntityPropertyType!
+  label: String!
+}
+
+enum EntityPropertyType {
+  Text
+  Boolean
+  Number
+  Amount
+  Date
+  Address
+  ChoiceUnique
+  ChoiceMultiple
+  Document
+  Phone
+  Ranking
+  RankingBacklog
+  CityName
+  CityEnriched
+  DocumentToSign
+}
+
+type EntityNameDetailed {
+  code: EntityName!
+  label: String!
+}
+
+enum EntityName {
+  Account
+  AccountComment
+  AccountCustomProperty
+  AccountDocument
+  AccountDocumentType
+  AccountDocumentTypeTranslation
+  AccountKycAdditionalAnswer
+  AccountMoneyMovement
+  AccountSecurityContract
+  AccountSecurityContractDocument
+  AccountingRecord
+  ActivitySector
+  ActivitySectorTranslation
+  Address
+  Algorithm
+  AlgorithmTranslation
+  AsynchronousOperation
+  AutomaticDistributionReinvestmentContract
+  BankAccount
+  BankAccountCustomProperty
+  CapitalCall
+  Cession
+  City
+  CmsBlock
+  CmsBlockTranslation
+  Communication
+  CommunicationTranslation
+  CommunicationDocument
+  Company
+  CompanyDocument
+  ComplianceControl
+  ConfigurableForm
+  ConfigurableFormHasStep
+  ConfigurableFormQuestion
+  ConfigurableFormQuestionTranslation
+  ConfigurableFormQuestionEntityProperty
+  ConfigurableFormQuestionEntityPropertyTranslation
+  ConfigurableFormStep
+  ConfigurableFormStepTranslation
+  Configuration
+  ConvertibleObligation
+  CorporateAccount
+  CorporateInfo
+  CorporateInfoCustomProperty
+  Country
+  CustomExport
+  DataTable
+  DataTableColumn
+  DataTableColumnTranslation
+  Dismemberment
+  Distribution
+  Distributor
+  DistributorAdvisor
+  DistributorCustomProperty
+  DistributorDocumentControl
+  DistributorNetwork
+  DmsDocument
+  Document
+  DocumentBatch
+  DocumentBatchIncludedSegment
+  DocumentControl
+  DocumentGenerated
+  DocumentTemplate
+  DocumentTemplateTranslation
+  DocumentTemplateAlgorithm
+  DocumentTemplateContentHtml
+  DocumentTemplateFillablePdf
+  EntityProperty
+  EntityPropertyAddress
+  EntityPropertyAmount
+  EntityPropertyBoolean
+  EntityPropertyChoiceMultiple
+  EntityPropertyChoiceUnique
+  EntityPropertyCityEnriched
+  EntityPropertyCityName
+  EntityPropertyDate
+  EntityPropertyDocument
+  EntityPropertyDocumentToSign
+  EntityPropertyNumber
+  EntityPropertyPhone
+  EntityPropertyRanking
+  EntityPropertyRankingBacklog
+  EntityPropertyReferential
+  EntityPropertyText
+  Export
+  ExternalId
+  FeatureFlag
+  Fund
+  FundShare
+  GeneralAssembly
+  GeneralAssemblyAccount
+  GeneralAssemblyResolution
+  GeneralAssemblyVote
+  IdempotentCall
+  IndividualAccount
+  Investment
+  InvestmentAdditionalAnswer
+  InvestmentCustomProperty
+  InvestorInfo
+  InvestorInfoCustomProperty
+  InvestorLoanInfo
+  InvestorRiskInfo
+  Invoice
+  InvoicedAccount
+  JointAccount
+  Kpi
+  LegalInformation
+  LegalInformationDocumentControl
+  LegalStatus
+  LegalStatusTranslation
+  LogHistory
+  Menu
+  MenuItem
+  MenuItemTranslation
+  MessageBlock
+  MessageBlockTranslation
+  MessageBlockSegment
+  NotificationType
+  NotificationTypeTranslation
+  Obligation
+  OnboardingImportedId
+  Operation
+  OperationDocument
+  OperationExcludedSegment
+  OperationFinancingInfo
+  OperationFinancingInfoTranslation
+  OperationIncludedSegment
+  OperationTranslation
+  PersonalInfo
+  PersonalInfoCustomProperty
+  Pledge
+  PmsSector
+  PmsSectorTranslation
+  RecurrenceContract
+  ReferentialChoice
+  ReferentialChoiceTranslation
+  ScpiShare
+  ScpiShareDismembermentKey
+  Security
+  SecurityFee
+  SecurityFeeConsultancy
+  SecurityFeeEntry
+  SecurityFeeManagement
+  SecurityFeePattern
+  SecurityFeePatternBase
+  SecurityFeePatternDistributor
+  SecurityFeePremiumSubscription
+  SecurityFeeTranslation
+  SecurityOperation
+  SecurityOperationCapitalCall
+  SecurityOperationCession
+  SecurityOperationDismemberment
+  SecurityOperationDistribution
+  SecurityOperationDocument
+  SecurityOperationInvestment
+  SecurityOperationInvestmentExcludedSegment
+  SecurityOperationInvestmentIncludedSegment
+  SecurityOperationTransfer
+  SecurityValue
+  Segment
+  Share
+  Shareholder
+  ShareholderCustomProperty
+  ShouldBeNullQuery
+  Stake
+  SynchronizationDataBuilder
+  SynchronizationService
+  SynchronizationServiceContext
+  SynchronizationServiceContextDataBuilderLink
+  Target
+  ThirdPartySigner
+  Transaction
+  TransactionDocument
+  TransactionFee
+  TransactionMoneyMovement
+  TransactionMoneyMovementDocument
+  TransactionNumbering
+  TransactionSecurity
+  Transfer
+  User
+  UserAccountPermission
+  UserSegment
+  Vehicle
+  VialinkControl
+  VirtualIban
+}
+
+type EntityPropertyDataStrategyDetailed {
+  code: EntityPropertyDataStrategy!
+  label: String!
+}
+
+enum EntityPropertyDataStrategy {
+  ExistingField
+  CustomProperty
+}
+
+type EntityPropertySpecificTreatmentDetailed {
+  code: EntityPropertySpecificTreatment!
+}
+
+enum EntityPropertySpecificTreatment {
+  InvestmentAmountRecompute
+}
+
+type ProviderTypeDetailed {
+  code: ProviderType!
+  label: String!
+}
+
+enum ProviderType {
+  MemoBank
+}
+
+type OperationDocument {
+  id: ID!
+  document: Document
+}
+
+enum OperationDescriptionState {
+  Hidden
+  Visible
+}
+
+type OperationDescriptionStateDetailed {
+  code: OperationDescriptionState!
+  label: String!
+}
+
+"A Security Operation Investment"
+type SecurityOperationInvestment implements SecurityOperation & SecurityOperationWithOneTransactionSecurity {
+  id: ID!
+  securityOperationDocuments: [SecurityOperationDocument]
+  name: String
+  status: SecurityOperationStatus @deprecated(reason: "Use securityOperationStatus instead")
+  securityOperationStatus: SecurityOperationStatusDetailed
+  type: SecurityOperationType!
+  securityOperationType: SecurityOperationTypeDetailed!
+  transactions(resultsPerPage: Int, page: Int = 1, search: String): TransactionConnection
+  moneyMovements(resultsPerPage: Int, page: Int = 1, search: String, filter: TransactionMoneyMovementFiltersInput): TransactionMoneyMovementConnection
+  kpiValues: [KpiValue]
+  asynchronousOperations: [AsynchronousOperation]
+  transactionSecurity: TransactionSecurity!
+  operation: Operation
+  security: Security!
+  issuerCompany: IssuerCompany!
+  collectedAmount: Amount!
+  securityOperationInvestmentType: SecurityOperationInvestmentTypeDetailed
+  capitalCallPercentage: Float!
+  issuedSecurities: Int
+  initialMinimalSubscriptionSecurityCount: Float!
+  nextMinimalSubscriptionSecurityCount: Float!
+  includedSegments: [SecurityOperationInvestmentIncludedSegment]
+  excludedSegments: [SecurityOperationInvestmentExcludedSegment]
+}
+
+"A Security Operation"
+interface SecurityOperation {
+  id: ID!
+  securityOperationDocuments: [SecurityOperationDocument]
+  name: String
+  status: SecurityOperationStatus @deprecated(reason: "Use securityOperationStatus instead")
+  securityOperationStatus: SecurityOperationStatusDetailed
+  type: SecurityOperationType!
+  securityOperationType: SecurityOperationTypeDetailed!
+  transactions(resultsPerPage: Int, page: Int = 1, search: String): TransactionConnection
+  moneyMovements(resultsPerPage: Int, page: Int = 1, search: String, filter: TransactionMoneyMovementFiltersInput): TransactionMoneyMovementConnection
+  kpiValues: [KpiValue]
+  asynchronousOperations: [AsynchronousOperation]
+}
+
+"A Security Operation Document"
+type SecurityOperationDocument {
+  id: ID
+  documentFilterAlgorithm: Algorithm
+  documentTemplate: DocumentTemplate
+  generationTrigger: SecurityOperationDocumentGenerationTrigger!
+  securityOperationDocumentGenerationTrigger: SecurityOperationDocumentGenerationTriggerDetailed!
+  sortIndex: Int!
+  defaultVisibilityByInvestor: Boolean!
+}
+
+type Algorithm {
+  id: ID!
+  technicalCode: AlgorithmTechnicalCodeDetailed
+  label: String!
+  algorithm: String!
+  type: AlgorithmTypeDetailed!
+  category: AlgorithmCategoryDetailed!
+}
+
+type AlgorithmTechnicalCodeDetailed {
+  code: AlgorithmTechnicalCode!
+  label: String!
+}
+
+enum AlgorithmTechnicalCode {
+  AmountComputeMaximumDispatchableAmount
+  AmountComputeMaximumDispatchableAmountByEffectiveDays
+  AmountComputePriceBySecurity
+  AmountComputePriceBySecurityByEffectiveDays
+  KycAnalysis
+  KycExpirationDate
+  RetrocessionInvoiceNumber
+  SamlUserFactory
+  DismembermentDurationStrategyForContracts
+  DismembermentEndDateComputation
+}
+
+type AlgorithmTypeDetailed {
+  code: AlgorithmType!
+  label: String!
+}
+
+enum AlgorithmType {
+  ExpressionLanguage
+  Twig
+  Sql
+}
+
+type AlgorithmCategoryDetailed {
+  code: AlgorithmCategory!
+  label: String!
+}
+
+enum AlgorithmCategory {
+  DOCUMENT_FILTER
+  STEP_FILTER
+  CessionDistributionAmountComputeStrategy
+  DocumentVariables
+  Kpi
+}
+
+enum SecurityOperationDocumentGenerationTrigger {
+  Manual
+  PostSignature
+  PostPayment
+  PostEffectiveDate
+  SubscriptionPack
+}
+
+type SecurityOperationDocumentGenerationTriggerDetailed {
+  code: SecurityOperationDocumentGenerationTrigger!
+  label: String!
+}
+
+enum SecurityOperationStatus {
+  Opened
+  Closed
+  AsynchronousCreation
+  AsynchronousSetPaymentDate
+  AsynchronousExportPayment
+}
+
+type SecurityOperationStatusDetailed {
+  code: SecurityOperationStatus!
+  label: String!
+}
+
+enum SecurityOperationType {
+  SecurityOperationInvestment
+  SecurityOperationCession
+  SecurityOperationDistribution
+  SecurityOperationCapitalCall
+  SecurityOperationTransfer
+  SecurityOperationDismemberment
+}
+
+type SecurityOperationTypeDetailed {
+  code: SecurityOperationType!
+  label: String!
+}
+
+"A connection to a list of items."
+type TransactionConnection {
+  totalCount: Int!
+
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+
+  "Information to aid in pagination."
+  edges: [TransactionEdge]
+}
+
+"Information about pagination in a connection."
+type PageInfo {
+  "When paginating forwards, are there more items?"
+  hasNextPage: Boolean!
+
+  "When paginating backwards, are there more items?"
+  hasPreviousPage: Boolean!
+
+  "When paginating backwards, the cursor to continue."
+  startCursor: String
+
+  "When paginating forwards, the cursor to continue."
+  endCursor: String
+}
+
+"An edge in a connection."
+type TransactionEdge {
+  "The item at the end of the edge."
+  node: Transaction
+
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+interface Transaction {
+  id: ID
+  type: TransactionType! @deprecated(reason: "Use transactionType instead")
+  transactionType: TransactionTypeDetailed!
+  securitiesNumber: Float!
+  unpledgedSecuritiesNumber: Float!
+  transactionDocuments: [TransactionDocument]
+  transactionMoneyMovement: TransactionMoneyMovement
+  transactionFees: [TransactionFee]
+  priceBySecurity: Float!
+  amount: Amount!
+  rawAmount: Amount!
+  securityOperation: SecurityOperation @deprecated(reason: "Use transactionSecurity.securityOperation")
+  transactionSecurity: TransactionSecurity
+  fromAccount: Account
+  toAccount: Account
+  transactionNumberings: [TransactionNumbering]
+  dismembermentType: DismembermentTypeDetailed
+
+  "URL to download the zip file containing all transaction documents. Only for Investments and CapitalCalls"
+  documentsZipFileUrl: String!
+}
+
+enum TransactionType {
+  INVESTMENT
+  CESSION
+  DISTRIBUTION
+  CAPITAL_CALL
+  TRANSFER
+  Dismemberment
+}
+
+type TransactionTypeDetailed {
+  code: TransactionType!
+  label: String!
+}
+
+"A transaction document"
+type TransactionDocument implements DocumentVisibilityForInvestor {
+  visibleByInvestor: Boolean!
+  id: ID!
+  transaction: Transaction!
+  documentGenerated: DocumentGenerated!
+  type: DocumentTypeDetailed!
+}
+
+"A transaction money movement"
+type TransactionMoneyMovement {
+  id: ID!
+  status: TransactionMoneyMovementState!
+  transactionMoneyMovementStatus: TransactionMoneyMovementStateDetailed
+  date: Date
+  transactions: [Transaction]
+  consolidatedTransaction: ConsolidatedTransaction!
+  invoice: Invoice
+  paymentMethod: PaymentMethodDetailed
+  exportedAt: DateTime
+  transactionMoneyMovementDocuments: [TransactionMoneyMovementDocument]!
+}
+
+"Enum mapped from App\\Enum\\TransactionMoneyMovementState"
+enum TransactionMoneyMovementState {
+  Authorized
+  Canceled
+  Blocked
+  Created
+  Dismembered
+  Exported
+  Partial
+  Recalled
+  Refused
+  Succeeded
+}
+
+type TransactionMoneyMovementStateDetailed {
+  code: TransactionMoneyMovementState!
+  label: String!
+}
+
+"A consolidated transaction build from multiple transactions"
+type ConsolidatedTransaction {
+  id: ID!
+
+  "Make it nullable due to permission returning null if we are not granted to display account"
+  fromAccount: Account
+
+  "Make it nullable due to permission returning null if we are not granted to display account"
+  toAccount: Account
+
+  type: TransactionTypeDetailed!
+  dismembermentType: DismembermentTypeDetailed
+  transactionSecurity: TransactionSecurity!
+  amount: Amount!
+  rawAmount: Amount!
+  taxationAmount: Amount!
+  gainAmount: Amount!
+  reinvestmentAmount: Amount!
+  distributedAmount: Amount!
+  recallableAmount: Amount!
+  definitiveAmount: Amount!
+  securitiesNumber: Float!
+  viewerActingLike: TransferViewerActingLike
+  transactions: [Transaction]!
+}
+
+type DismembermentTypeDetailed {
+  code: DismembermentType!
+  label: String!
+  needDuration: Boolean!
+  needUsufructuaryAge: Boolean!
+}
+
+enum DismembermentType {
+  FullOwnership
+  BareOwnership
+  Usufruct
+  LifeBareOwnership
+  LifeUsufruct
+  ExpiredUsufruct
+}
+
+type TransactionSecurity {
+  id: ID!
+  priceBySecurity: Float
+  securityOperation: SecurityOperation!
+  security: Security!
+  issuerCompany: IssuerCompany!
+  operation: Operation
+}
+
+"A public representation of a company"
+type IssuerCompany {
+  id: ID!
+  label: String!
+}
+
+enum TransferViewerActingLike {
+  Investment
+  Cession
+  Both
+}
+
+type Invoice {
+  id: ID!
+  number: String!
+  issueDate: Date!
+  subject: String!
+  invoicerAccount: Account!
+  invoicer: Array!
+  invoicedAccount: Account!
+  invoiced: Array!
+  documentGenerated: DocumentGenerated
+  transactionFees: [TransactionFee]!
+  transactionMoneyMovement: TransactionMoneyMovement
+  amountAte: Amount!
+  amountAti: Amount!
+}
+
+type TransactionFee {
+  id: ID!
+  feeType: FeeType!
+  feeYearOffset: Int!
+  amountAte: Int!
+  amountAti: Int!
+  vatPercentage: Decimal!
+  retrocessionAmountAte: Int
+  retrocessionAmountAti: Int
+  percentageAte: Decimal!
+  percentageAti: Decimal!
+  retrocessionPercentageAte: Decimal
+  retrocessionPercentageAti: Decimal
+  transaction: Transaction
+  retrocessionInvoice: Invoice
+  retrocessionStatus: RetrocessionStateDetailed
+  name: String!
+  calculationType: FeeCalculationTypeDetailed!
+  isOnTop: Boolean
+}
+
+enum FeeType {
+  CONSULTANCY_FEES
+  ENTRY_FEES
+  MANAGEMENT_FEES
+  PREMIUM_SUBSCRIPTION_FEES
+}
+
+scalar Decimal
+
+type RetrocessionStateDetailed {
+  code: RetrocessionState!
+  label: String!
+}
+
+enum RetrocessionState {
+  Paid
+  InvoiceGenerated
+  ToInvoice
+  NoEffectiveDate
+}
+
+type FeeCalculationTypeDetailed {
+  code: FeeCalculationType!
+  label: String!
+}
+
+enum FeeCalculationType {
+  OnTop
+  Included
+}
+
+type PaymentMethodDetailed {
+  code: PaymentMethod!
+  label: String!
+}
+
+"A transaction money movement document"
+type TransactionMoneyMovementDocument implements DocumentVisibilityForInvestor {
+  visibleByInvestor: Boolean!
+  id: ID!
+  documentGenerated: DocumentGenerated!
+  type: DocumentTypeDetailed!
+}
+
+type TransactionNumbering {
+  id: ID!
+  start: Float!
+  end: Float!
+}
+
+input TransactionMoneyMovementFiltersInput {
+  bankAccountStatus: BankAccountStatus
+
+  "Available values are: TransactionMoneyMovementState::Blocked, TransactionMoneyMovementState::Succeeded, TransactionMoneyMovementState::Created, Exported"
+  transactionMoneyMovementState: String
+}
+
+"A connection to a list of items."
+type TransactionMoneyMovementConnection {
+  totalCount: Int!
+
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+
+  "Information to aid in pagination."
+  edges: [TransactionMoneyMovementEdge]
+}
+
+"An edge in a connection."
+type TransactionMoneyMovementEdge {
+  "The item at the end of the edge."
+  node: TransactionMoneyMovement
+
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+type KpiValue {
+  kpi: Kpi!
+  value: Any
+}
+
+type Kpi {
+  id: ID!
+  label: String!
+  unit: String!
+}
+
+scalar Any
+
+type AsynchronousOperation {
+  id: ID!
+  status: AsynchronousOperationState
+  type: AsynchronousOperationType
+  createdAt: Date!
+  updatedAt: Date!
+  startedAt: Date
+  endedAt: Date
+  authorName: String
+  authorEmail: String
+  executionCount: Int
+  securityOperation: SecurityOperation
+}
+
+enum AsynchronousOperationState {
+  Created
+  Started
+  Failed
+  Done
+  Retryable
+}
+
+enum AsynchronousOperationType {
+  ConveneGeneralAssembly
+  CustomExport
+  DocumentBatchDocumentToggleVisibility
+  ExportDataTable
+  GenerateDocumentBatch
+  SecurityOperationDistributionCreateDistribution
+  SecurityOperationDistributionDownloadCreditTransferSepaFile
+  SecurityOperationDistributionResetTransactionMoneyMovementsExportedState
+  SecurityOperationDistributionSetPaymentDate
+  UpdateAttendanceGeneralAssembly
+}
+
+"A Security Operation"
+interface SecurityOperationWithOneTransactionSecurity implements SecurityOperation {
+  id: ID!
+  securityOperationDocuments: [SecurityOperationDocument]
+  name: String
+  status: SecurityOperationStatus @deprecated(reason: "Use securityOperationStatus instead")
+  securityOperationStatus: SecurityOperationStatusDetailed
+  type: SecurityOperationType!
+  securityOperationType: SecurityOperationTypeDetailed!
+  transactions(resultsPerPage: Int, page: Int = 1, search: String): TransactionConnection
+  moneyMovements(resultsPerPage: Int, page: Int = 1, search: String, filter: TransactionMoneyMovementFiltersInput): TransactionMoneyMovementConnection
+  kpiValues: [KpiValue]
+  asynchronousOperations: [AsynchronousOperation]
+  transactionSecurity: TransactionSecurity!
+}
+
+type SecurityOperationInvestmentTypeDetailed {
+  code: SecurityOperationInvestmentType!
+  label: String!
+}
+
+enum SecurityOperationInvestmentType {
+  SimpleSubscriptions
+  ScheduledSubscriptionsFullOwnership
+  ScheduledSubscriptionsBareOwnership
+  DistributionsReinvestment
+}
+
+"A Security Operation Investment included Segment"
+type SecurityOperationInvestmentIncludedSegment {
+  id: ID!
+  securityOperationInvestment: SecurityOperationInvestment!
+  segment: Segment!
+}
+
+type Segment {
+  id: ID!
+  name: String!
+  description: String
+  type: SegmentType! @deprecated(reason: "Use segmentType")
+  segmentType: SegmentTypeDetailed!
+  userSegments(
+    resultsPerPage: Int
+    page: Int = 1
+
+    "Term to search in id, firstname, lastname, email or mobile"
+    search: String
+  ): UserSegmentConnection
+  usersNumber: Int!
+  updatedAt: DateTime!
+}
+
+enum SegmentType {
+  STATIC
+  DYNAMIC
+}
+
+type SegmentTypeDetailed {
+  code: SegmentType!
+  label: String!
+}
+
+"A connection to a list of items."
+type UserSegmentConnection {
+  totalCount: Int!
+
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+
+  "Information to aid in pagination."
+  edges: [UserSegmentEdge]
+}
+
+"An edge in a connection."
+type UserSegmentEdge {
+  "The item at the end of the edge."
+  node: UserSegment
+
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+type UserSegment {
+  id: ID!
+  segment: Segment!
+  user: User!
+}
+
+"A Security Operation Investment excluded Segment"
+type SecurityOperationInvestmentExcludedSegment {
+  id: ID!
+  securityOperationInvestment: SecurityOperationInvestment!
+  segment: Segment!
+}
+
+enum KycStatus {
+  TO_COMPLETE
+  COMPLETED
+  VALIDATED
+  REFUSED
+  Expired
+}
+
+type ConfigurableForm {
+  id: ID!
+  technicalCode: ConfigurableFormTechnicalCode
+  label: String!
+  configurableFormType: ConfigurableFormTypeDetailed!
+  configurableFormHasSteps: [ConfigurableFormHasStep]
+}
+
+enum ConfigurableFormTechnicalCode {
+  KycInvestor
+  KycDistributor
+  KycDistributorNetwork
+  KycVehicle
+  KycTarget
+}
+
+type ConfigurableFormTypeDetailed {
+  code: ConfigurableFormType!
+  label: String!
+}
+
+enum ConfigurableFormType {
+  Kyc
+  InvestmentModalities
+}
+
+type ConfigurableFormHasStep {
+  id: ID!
+  configurableForm: ConfigurableForm!
+  configurableFormStep: ConfigurableFormStep!
+  sortIndex: Int!
+}
+
+type ConfigurableFormStep {
+  id: ID!
+  technicalCode: String!
+  label: String!
+  stepFilterAlgorithm: Algorithm
+  sortIndex: Int! @deprecated(reason: "Use `sortIndex` on `ConfigurableFormHasStep` instead")
+  questions: [ConfigurableFormQuestion]
+}
+
+type ConfigurableFormQuestion {
+  id: ID!
+  formDefinition: Array!
+
+  "Define if the field is applicable upon current step data. Syntax in twig"
+  applicable: String!
+
+  validations: Array!
+  sortIndex: Int!
+  technicalCode: String!
+  configurableFormStep: ConfigurableFormStep!
+  dataStrategy: FormQuestionDataStrategyDetailed!
+  dataNormalizer: FormQuestionDataNormalizerDetailed!
+  dataStrategyDefinition: Mixed
+  entityPropertyContext: FormQuestionDataStrategyDefinitionDetailed
+  dataNormalizerDefinition: Mixed
+  phpApplicable: String!
+  entityProperty: EntityProperty @deprecated(reason: "Use ConfigurableFormQuestionEntityProperties or FirstEntityProperty instead")
+  firstEntityProperty: EntityProperty
+  configurableFormQuestionEntityProperties: [ConfigurableFormQuestionEntityProperty]
+  extendedValidations: Array!
+  label: String
+  tooltip: String
+  placeholder: String
+  helpText: String
+  totalLabel: String
+  append: String
+  content: String
+  width: Int
+}
+
+type FormQuestionDataStrategyDetailed {
+  code: FormQuestionDataStrategy!
+  label: String!
+}
+
+enum FormQuestionDataStrategy {
+  Noop
+  ExistingField
+  ExpressionLanguage
+  AccountKycAdditionalAnswer
+  InvestmentAdditionalAnswer
+  InvestmentAmountRecompute
+  TransactionDocument
+  DocumentsToSign
+  EntityProperty
+}
+
+type FormQuestionDataNormalizerDetailed {
+  code: FormQuestionDataNormalizer!
+  label: String!
+}
+
+enum FormQuestionDataNormalizer {
+  Noop
+  Value
+  Address
+  DocumentControlUploadedFile
+  DocumentUploadedFile
+  Shareholders
+  Entity
+}
+
+type FormQuestionDataStrategyDefinitionDetailed {
+  code: FormQuestionDataStrategyDefinition!
+  label: String!
+}
+
+enum FormQuestionDataStrategyDefinition {
+  CorporateInfo
+  RepresentativeLegalInfo
+  Distributor
+  InvestorInfo
+  PersonalInfo
+  SecondPersonalInfo
+  SignerPersonalInfo
+  Account
+  Investment
+  BankAccountCreditTransfer
+  BankAccountDirectDebit
+  BankAccountRetrocessionDebit
+  BankAccountPea
+  BankAccountPeaPme
+}
+
+type ConfigurableFormQuestionEntityProperty {
+  id: ID!
+  configurableFormQuestion: ConfigurableFormQuestion!
+  entityProperty: EntityProperty!
+  sortIndex: Int!
+  label: String
+  tooltip: String
+  placeholder: String
+  helpText: String
+}
+
+"An Operation included Segment"
+type OperationIncludedSegment {
+  id: ID!
+  operation: Operation!
+  segment: Segment!
+}
+
+"An Operation excluded Segment"
+type OperationExcludedSegment {
+  id: ID!
+  operation: Operation!
+  segment: Segment!
+}
+
+type SignatureMethodDetailed {
+  code: SignatureMethod!
+  label: String!
+}
+
+enum SignatureMethod {
+  Electronic
+  Manual
+}
+
+type TaxationTypeDetailed {
+  code: TaxationType!
+  label: String!
+}
+
+enum TaxationType {
+  PEA
+  PEA_PME
+  APPORT_CESSION
+  COMPTE_TITRES
+  ASSURANCE_VIE_LUXEMBOURGEOISE
+  IR
+  NONE
+}
+
+enum TransactionState {
+  ExportedPayment
+  Paid
+  PaymentRefused
+  PendingPayment
+  PendingSignature
+  PendingValidation
+  SignedAndPaid
+  SignedButPaymentRefused
+}
+
+"An Active Portfolio Participation"
+type ActiveParticipation {
+  id: ID
+  lastOperation: Operation
+  issuerId: String
+  issuerName: String
+  issuerLogo: Document
+  issuerRisk: Int
+  targetActivity: String
+  targetPmsSector: PmsSector
+  investedCapital: Amount
+  engagedCapital: Amount
+  remainingCapital: Amount
+  repaidCapital: Amount
+  calledCapital: Amount
+  remainingToCallCapital: Amount
+  repaidGainRaw: Amount
+  collectedTaxation: Amount
+  repaidGainNet: Amount
+  repaidRaw: Amount
+  repaidNet: Amount
+  generatedGainRaw: Amount
+  currentIrr: Float
+  currentMultiple: Float!
+  estimatedEndDate: Date
+  unrealizedGainRaw: Amount
+  totalValue: Amount
+  dpi: Float
+  rvpi: Float
+  tvpi: Float
+  percentageOfPortfolio: Float!
+  percentageOwned: Float
+  lastValue: Amount!
+  security: Security!
+  firstInvestmentDate: Date!
+  detentionPeriodInMonths: Int!
+  account: Account
+  remainingSecuritiesCount: Float!
+  recallableAmount: Amount
+  taxationType: TaxationTypeDetailed!
+}
+
+type PmsSector {
+  id: ID!
+  label: String!
+  isDisplayed: Boolean!
+}
+
+"A Portfolio Sold Asset"
+type SoldParticipation {
+  id: ID
+  security: Security
+  lastOperation: Operation
+  issuerId: String
+  issuerName: String
+  issuerLogo: Document
+  investedCapital: Amount
+  engagedCapital: Amount
+  repaidCapital: Amount
+  repaidGainRaw: Amount
+  collectedTaxation: Amount
+  repaidGainNet: Amount
+  realizedIrr: Float
+  realizedMultiple: Float
+  totalValue: Amount
+  dpi: Float!
+  tvpi: Float!
+  firstInvestmentDate: Date!
+  detentionPeriodInMonths: Int!
+  account: Account
+  recallableAmount: Amount
+  taxationType: TaxationTypeDetailed!
+}
+
+"A Distributor advisor"
+type DistributorAdvisor {
+  id: ID!
+  user: User!
+  distributor: Distributor!
+}
+
+"A Distributor"
+type Distributor {
+  id: ID
+  corporateAccount: CorporateAccount
+  vatPercentage: Float
+  distributorNetwork: DistributorNetwork
+  specificSecurityFeePatterns: [SecurityFeePattern!]!
+  lastInvoiceNumber: String
+}
+
+enum AccountType {
+  IndividualAccount
+  CorporateAccount
+  JointAccount
+}
+
+type AccountTypeDetailed {
+  code: AccountType!
+  label: String!
+}
+
+type KycStatusDetailed {
+  code: KycStatus!
+  label: String!
+}
+
+"An Investor info"
+type InvestorInfo {
+  id: ID!
+  lcbftLevel: LcbftLevelDetailed
+  specificRelationship: Boolean!
+  relationshipComment: String
+  relationshipRisk: LcbftLevel @deprecated(reason: "Use relationshipRiskDetailed instead")
+  relationshipRiskDetailed: LcbftLevelDetailed
+  customProperties: [InvestorInfoCustomProperty]
+}
+
+type InvestorInfoCustomProperty {
+  entityProperty: EntityProperty!
+  value: Array
+}
+
+"An Account security contract"
+interface AccountSecurityContract {
+  id: ID!
+  account: Account!
+  security: Security!
+  pledges: [Pledge]
+  redeemableSecuritiesNumber: Float
+  currentWithdrawalPrice: Amount
+}
+
+type Pledge {
+  id: ID!
+  transaction: Transaction!
+  security: Security!
+  securityTypeDetailed: SecurityTypeDetailed!
+  numberingStart: Float!
+  numberingEnd: Float!
+  securitiesNumber: Float!
+  status: PledgeStateDetailed!
+  numberOfDecimals: Int
+  bankName: String
+  bankAddress: Address
+  agreementDocument: Document
+  releaseDocument: Document
+  startDate: Date
+  initialEndDate: Date
+  actualEndDate: Date
+}
+
+type PledgeStateDetailed {
+  code: PledgeState!
+  label: String!
+}
+
+enum PledgeState {
+  Pending
+  Active
+  Released
+}
+
+type Address {
+  id: ID!
+  street: String
+  city: String
+  postalCode: String
+  country: Country
+}
+
+type Investment implements Transaction {
+  id: ID
+  type: TransactionType! @deprecated(reason: "Use transactionType instead")
+  transactionType: TransactionTypeDetailed!
+  securitiesNumber: Float!
+  unpledgedSecuritiesNumber: Float!
+  transactionDocuments: [TransactionDocument]
+  transactionMoneyMovement: TransactionMoneyMovement
+  transactionFees: [TransactionFee]
+  priceBySecurity: Float!
+  amount: Amount!
+  rawAmount: Amount!
+  securityOperation: SecurityOperationInvestment! @deprecated(reason: "Use transactionSecurity.securityOperation")
+  transactionSecurity: TransactionSecurity
+  fromAccount: Account
+  toAccount: Account
+  transactionNumberings: [TransactionNumbering]
+  dismembermentType: DismembermentTypeDetailed
+
+  "URL to download the zip file containing all transaction documents. Only for Investments and CapitalCalls"
+  documentsZipFileUrl: String!
+
+  effectiveDate: Date
+  effectiveDateState: EffectiveDateStateDetailed
+  actualDismembermentType: DismembermentType @deprecated(reason: "Use investmentActualDismembermentType instead")
+  investmentActualDismembermentType: DismembermentTypeDetailed
+  dismembermentDurationInYears: Int
+  dismembermentEndAt: Date
+  valuationDiscount: Float
+  initialAmountWithoutOnTopFees: Amount!
+  initialAmount: Amount!
+  hasCoSigner: Boolean
+  capitalCallPercentage: Float
+  signed: Boolean!
+  distributedByAdvisor: DistributorAdvisor
+  distributedToAccountLabel: String
+  signatureDate: Date
+  signersStatuses: [SignerStatus!]!
+  reference: String
+  status: TransactionState! @deprecated(reason: "Use investmentStatus instead")
+  investmentStatus: TransactionStateDetailed!
+  yousignSignatureRequestId: String
+  taxationType: TaxationType @deprecated(reason: "Use taxationTypeDetailed")
+  taxationTypeDetailed: TaxationTypeDetailed
+  taxationAccountNumber: String
+  subscriptionStep: SubscriptionStep
+  modalitiesStep: ConfigurableFormStep
+  interestDate: Date
+  paymentInformation: PaymentInformation
+
+  "The link provided has an expiration. Ask it just before giving it to the end user"
+  signatureLink: SignatureLink
+
+  customProperties: [InvestmentCustomProperty]
+  distributorBankAccountStatus: BankAccountStatusDetailed!
+  operation: Operation
+  investorAcceptedRiskAtSignDate: Int
+  issuerSrriAtSignDate: Int
+  adequate: Boolean
+  createdAt: DateTime!
+  source: InvestmentSourceDetailed
+  possessedSecuritiesNumber: Float
+  securityFeePattern: SecurityFeePattern
+  canUpdateAmount: Boolean!
+  modalitiesStatusDetailed: InvestmentModalitiesStatusDetailed!
+  modalitiesRefusedComment: String
+  validationDate: Date
+  hasSubscriptionPackBeenReset: Boolean!
+  areFeesManuallyConfigured: Boolean!
+}
+
+type EffectiveDateStateDetailed {
+  code: EffectiveDateState!
+  label: String!
+}
+
+enum EffectiveDateState {
+  Waiting
+  Pending
+  Validated
+}
+
+"A SignerStatus"
+type SignerStatus {
+  "Might be null in case of manual subscription"
+  signerId: String
+
+  type: SignerType!
+  email: String
+  firstName: String
+  lastName: String
+  phone: String
+  status: String!
+  manual: Boolean
+}
+
+enum SignerType {
+  INVESTOR
+  COSUBSCRIBER
+  DISTRIBUTOR
+  THIRD_PARTY
+  SECOND_THIRD_PARTY
+}
+
+type TransactionStateDetailed {
+  code: TransactionState!
+  label: String!
+}
+
+enum SubscriptionStep {
+  Account
+  Kyc
+  Modalities
+}
+
+interface PaymentInformation {
+  paymentMethod: PaymentMethod
+  paymentMethodDetailed: PaymentMethodDetailed
+}
+
+"A SignatureLink"
+type SignatureLink {
+  link: String!
+  linkExpirationDate: DateTime!
+}
+
+type InvestmentCustomProperty {
+  entityProperty: EntityProperty!
+  value: Array
+}
+
+type InvestmentSourceDetailed {
+  code: InvestmentSource!
+  label: String!
+}
+
+enum InvestmentSource {
+  ExternalApi
+  Admin
+  DistributionReinvestment
+  Distributor
+  Import
+  Investor
+  ScheduledSubscription
+}
+
+interface SecurityFeePattern {
+  id: ID!
+  name: String!
+  securityFees: [SecurityFee]!
+  security: Security!
+  isDefault: Boolean!
+  isDeleted: Boolean!
+}
+
+interface SecurityFee {
+  id: ID!
+  securityFeePattern: SecurityFeePattern!
+  type: String!
+  feeType: FeeTypeDetailed!
+  label: String!
+  name: String!
+  localizedName: [LocalizedString]!
+  calculationType: FeeCalculationTypeDetailed
+  calculationBasis: FeeCalculationBasisDetailed
+  calculationPeriodicity: FeeCalculationPeriodicityDetailed
+}
+
+type FeeTypeDetailed {
+  code: FeeType!
+  label: String!
+}
+
+type FeeCalculationBasisDetailed {
+  code: FeeCalculationBasis!
+  label: String!
+}
+
+enum FeeCalculationBasis {
+  AmountSubscribed
+  MaturityValuation
+}
+
+type FeeCalculationPeriodicityDetailed {
+  code: FeeCalculationPeriodicity!
+  label: String!
+}
+
+enum FeeCalculationPeriodicity {
+  Once
+  Monthly
+  Quarterly
+  Biannual
+  Annual
+}
+
+type InvestmentModalitiesStatusDetailed {
+  code: InvestmentModalitiesStatus!
+  label: String!
+}
+
+enum InvestmentModalitiesStatus {
+  ToComplete
+  Validated
+  Completed
+  Refused
+}
+
+"A Cession"
+type Cession implements Transaction & DistributionDetail {
+  id: ID
+  type: TransactionType! @deprecated(reason: "Use transactionType instead")
+  transactionType: TransactionTypeDetailed!
+  securitiesNumber: Float!
+  unpledgedSecuritiesNumber: Float!
+  transactionDocuments: [TransactionDocument]
+  transactionMoneyMovement: TransactionMoneyMovement
+  transactionFees: [TransactionFee]
+  priceBySecurity: Float!
+  amount: Amount!
+  rawAmount: Amount!
+  securityOperation: SecurityOperation @deprecated(reason: "Use transactionSecurity.securityOperation")
+  transactionSecurity: TransactionSecurity
+  fromAccount: Account
+  toAccount: Account
+  transactionNumberings: [TransactionNumbering]
+  dismembermentType: DismembermentTypeDetailed
+
+  "URL to download the zip file containing all transaction documents. Only for Investments and CapitalCalls"
+  documentsZipFileUrl: String!
+
+  distributionType: DistributionTypeDetailed!
+  distributionTaxation: DistributionTaxationDetailed!
+  reinvestmentPercentage: Float
+  reinvestmentAmount: Amount
+  rawGainAmount: Amount
+  rawCapitalAmount: Amount
+  taxationAmount: Amount
+  taxationDetails: Array
+  endEffectiveDate: Date
+}
+
+interface DistributionDetail {
+  distributionType: DistributionTypeDetailed!
+  distributionTaxation: DistributionTaxationDetailed!
+  reinvestmentPercentage: Float
+  reinvestmentAmount: Amount
+}
+
+type DistributionTypeDetailed {
+  code: DistributionType!
+  label: String!
+}
+
+enum DistributionType {
+  LandCapitalGain
+  FinancialIncome
+  LandIncome
+  RecallableDistribution
+}
+
+type DistributionTaxationDetailed {
+  code: DistributionTaxation!
+  label: String!
+}
+
+enum DistributionTaxation {
+  None
+  FrFlatTax
+}
+
+type AccountLogHistory {
+  id: ID!
+  event: String!
+  authorName: String
+  authorPersona: String
+  date: DateTime
+  ownerId: ID
+  accountId: ID
+}
+
+"An Account comment"
+type AccountComment {
+  id: ID!
+  content: String!
+  account: Account!
+  userCreator: String!
+  lastEditor: String
+  createdAt: DateTime!
+}
+
+type AccountPersonaDetailed {
+  code: AccountPersona!
+  label: String!
+}
+
+enum AccountPersona {
+  Investor
+  Distributor
+  DistributorNetwork
+  Vehicle
+  Target
+}
+
+type CorporateInfo implements LegalInfo {
+  id: ID!
+  address: Address
+  corporateName: String
+  registrationId: String
+  legalStatus: LegalStatus
+  socialCapital: Float
+  cityRegistration: String
+  representativeQuality: String
+  activitySector: ActivitySector
+  customProperties: [CorporateInfoCustomProperty]
+}
+
+interface LegalInfo {
+  id: ID!
+  address: Address
+}
+
+type LegalStatus {
+  id: ID!
+  label: String!
+  isFund: Boolean!
+  isPersonal: Boolean!
+  isDisplayed: Boolean!
+}
+
+type ActivitySector {
+  id: ID!
+  label: String!
+}
+
+type CorporateInfoCustomProperty {
+  entityProperty: EntityProperty
+  value: Array
+}
+
+type CorporateAccountTaxationTypeDetailed {
+  code: CorporateAccountTaxationType!
+  label: String!
+}
+
+enum CorporateAccountTaxationType {
+  IR
+  IS
+}
+
+"A Distributor network"
+type DistributorNetwork {
+  id: ID
+  corporateAccount: CorporateAccount
+}
+
+type SupportedLocaleDetailed {
+  code: SupportedLocale!
+  label: String!
+}
+
+"Url parameters as query string and parsed value"
+type UrlParameters {
+  queryString: String
+  parsed: Array
+}
+
+"A Company document"
+type CompanyDocument {
+  id: ID!
+  document: Document!
+  createdBy: User!
+  createdAt: DateTime!
+}
+
+type Communication {
+  id: ID!
+  title: String!
+  localizedTitle: [LocalizedString]!
+  issuer: Company!
+  communicationType: CommunicationTypeDetailed!
+  period: Date!
+  htmlContent: String
+  localizedHtmlContent: [LocalizedString]!
+
+  "State of the communication"
+  state: CommunicationStateDetailed!
+
+  publishDate: DateTime
+  CommunicationDocuments: [CommunicationDocument] @deprecated(reason: "Use 'communicationDocuments' instead")
+  communicationDocuments: [CommunicationDocument]
+}
+
+type CommunicationTypeDetailed {
+  code: CommunicationType!
+  label: String!
+}
+
+enum CommunicationType {
+  Reporting
+  News
+}
+
+type CommunicationStateDetailed {
+  code: CommunicationState!
+  label: String!
+}
+
+enum CommunicationState {
+  Draft
+  Published
+  Unpublished
+}
+
+type CommunicationDocument {
+  id: ID!
+  communication: Communication!
+  document: Document!
+}
+
+type DistributionPeriodicityDetailed {
+  code: DistributionPeriodicity!
+  label: String!
+}
+
+enum DistributionPeriodicity {
+  MONTHLY
+  QUARTERLY
+  BIANNUAL
+  ANNUAL
+  IN_FINE
+  VARIABLE
+}
+
+"A Security value"
+type SecurityValue {
+  id: ID!
+  price: PreciseAmount!
+  valueAt: DateTime!
+  security: Security
+}
+
+scalar PreciseAmount
+
+"A connection to a list of items."
+type RemainingParticipationConnection {
+  totalCount: Int!
+
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+
+  "Information to aid in pagination."
+  edges: [RemainingParticipationEdge]
+}
+
+"An edge in a connection."
+type RemainingParticipationEdge {
+  "The item at the end of the edge."
+  node: RemainingParticipation
+
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+type RemainingParticipation {
+  id: ID!
+  account: Account!
+  remainingSecurities: Float!
+
+  "The cumulated value is available only when remaining participations are not filtered"
+  cumulatedSecuritiesNumber: Float
+
+  firstPaymentDate: Date!
+  firstEffectiveDate: Date!
+}
+
+input SortingField {
+  field: String!
+  direction: String = "Asc"
+}
+
+type ScpiShareDismembermentKey {
+  id: ID!
+  scpiShare: ScpiShare!
+  usufructValuationDiscount: Float!
+  bareOwnershipValuationDiscount: Float!
+  durationInYears: Int!
+  displayOnInitialSubscription: Boolean!
+}
+
+"A connection to a list of items."
+type PairedDismembermentsConnection {
+  totalCount: Int!
+
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+
+  "Information to aid in pagination."
+  edges: [PairedDismembermentsEdge]
+}
+
+"An edge in a connection."
+type PairedDismembermentsEdge {
+  "The item at the end of the edge."
+  node: PairedDismemberments
+
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+type PairedDismemberments {
+  id: ID!
+  security: Security!
+  bareOwnershipAccount: Account!
+  usufructAccount: Account!
+  securitiesNumber: Float!
+  firstEffectiveDate: Date!
+  bareOwnershipEffectiveDate: Date!
+  usufructEffectiveDate: Date!
+  bareOwnershipValidationDate: Date!
+  usufructValidationDate: Date!
+  dismembermentEndAt: Date
+  dismembermentDurationInYears: Int
+  numbering: SecurityNumbering!
+}
+
+type SecurityNumbering {
+  start: Float!
+  end: Float!
+}
+
+"A Security"
+type Share implements Security {
+  id: ID!
+  type: SecurityType!
+  securityType: SecurityType! @deprecated(reason: "Use `type`")
+  securityTypeDetailed: SecurityTypeDetailed!
+  name: String!
+  stakes: [Stake]!
+  company: Company!
+  nominalValue: Amount!
+  distributionPeriodicity: DistributionPeriodicityDetailed!
+  securityFeePatterns: [SecurityFeePattern!]!
+  defaultSecurityFeePattern: SecurityFeePattern
+  numberOfDecimals: Float!
+  latestValue: SecurityValue
+  remainingParticipations(
+    resultsPerPage: Int
+    page: Int = 1
+
+    "Term to search in id, firstname, lastname, email or mobile"
+    search: String
+
+    "Flag to define whether the usufruct participations should be returned or not"
+    excludeUsufruct: Boolean = false
+  ): RemainingParticipationConnection
+  securityValues: [SecurityValue]
+  engagedInvestmentAmount: Amount
+  movements(
+    resultsPerPage: Int
+    page: Int = 1
+    transactionTypes: [TransactionType!]
+
+    "Term to search in id, firstname, lastname, email or mobile"
+    search: String
+
+    sortingFields: [SortingField] = []
+  ): TransactionMoneyMovementConnection
+}
+
+"A Security"
+type Obligation implements Security {
+  id: ID!
+  type: SecurityType!
+  securityType: SecurityType! @deprecated(reason: "Use `type`")
+  securityTypeDetailed: SecurityTypeDetailed!
+  name: String!
+  stakes: [Stake]!
+  company: Company!
+  nominalValue: Amount!
+  distributionPeriodicity: DistributionPeriodicityDetailed!
+  securityFeePatterns: [SecurityFeePattern!]!
+  defaultSecurityFeePattern: SecurityFeePattern
+  numberOfDecimals: Float!
+  latestValue: SecurityValue
+  remainingParticipations(
+    resultsPerPage: Int
+    page: Int = 1
+
+    "Term to search in id, firstname, lastname, email or mobile"
+    search: String
+
+    "Flag to define whether the usufruct participations should be returned or not"
+    excludeUsufruct: Boolean = false
+  ): RemainingParticipationConnection
+  securityValues: [SecurityValue]
+  engagedInvestmentAmount: Amount
+  movements(
+    resultsPerPage: Int
+    page: Int = 1
+    transactionTypes: [TransactionType!]
+
+    "Term to search in id, firstname, lastname, email or mobile"
+    search: String
+
+    sortingFields: [SortingField] = []
+  ): TransactionMoneyMovementConnection
+  expectedRate: Float!
+  duration: Int!
+}
+
+"A Security"
+type ConvertibleObligation implements Security {
+  id: ID!
+  type: SecurityType!
+  securityType: SecurityType! @deprecated(reason: "Use `type`")
+  securityTypeDetailed: SecurityTypeDetailed!
+  name: String!
+  stakes: [Stake]!
+  company: Company!
+  nominalValue: Amount!
+  distributionPeriodicity: DistributionPeriodicityDetailed!
+  securityFeePatterns: [SecurityFeePattern!]!
+  defaultSecurityFeePattern: SecurityFeePattern
+  numberOfDecimals: Float!
+  latestValue: SecurityValue
+  remainingParticipations(
+    resultsPerPage: Int
+    page: Int = 1
+
+    "Term to search in id, firstname, lastname, email or mobile"
+    search: String
+
+    "Flag to define whether the usufruct participations should be returned or not"
+    excludeUsufruct: Boolean = false
+  ): RemainingParticipationConnection
+  securityValues: [SecurityValue]
+  engagedInvestmentAmount: Amount
+  movements(
+    resultsPerPage: Int
+    page: Int = 1
+    transactionTypes: [TransactionType!]
+
+    "Term to search in id, firstname, lastname, email or mobile"
+    search: String
+
+    sortingFields: [SortingField] = []
+  ): TransactionMoneyMovementConnection
+  expectedRate: Float!
+  duration: Int!
+}
+
+type DistributorAccount implements Account {
+  id: ID!
+  createdAt: DateTime!
+  documentControls: [AccountDocumentControl]
+  mostRecentVialinkControl: VialinkControl
+  label: String!
+  type: AccountType! @deprecated(reason: "Use `accountType`")
+  accountType: AccountTypeDetailed!
+  lcbftLevel: LcbftLevel! @deprecated(reason: "Use investorInfo.lcbftLevel instead")
+  lcbftLevelDetailed: LcbftLevelDetailed! @deprecated(reason: "Use investorInfo.lcbftLevelDetailed instead")
+  kycExpirationDate: DateTime
+  kycStatus: KycStatus! @deprecated(reason: "use kycStatusDetailed instead")
+  kycStatusDetailed: KycStatusDetailed!
+  kycRefusedComment: String
+  investorInfo: InvestorInfo!
+  user(
+    "Optional user ID to return instead of the account's default user"
+    userId: ID
+  ): User
+  canValidateKyc: Boolean
+  kycAnalysisResult: Array
+  accountDocuments: [AccountDocument]
+  bankAccounts: [BankAccount]
+  bankAccountByBankAccountType(
+    bankAccountType: BankAccountType!
+
+    "If true, will return the default bank account if no bank account of the given type is found"
+    fallbackToDefault: Boolean = false
+  ): BankAccount
+  accountSecurityContracts: [AccountSecurityContract]
+  investmentsAndTransfers(securityId: ID, transactionMoneyMovementState: TransactionMoneyMovementState): [Transaction]
+  investments(operationStates: [OperationState]): [Investment]
+  cessions(securityId: ID): [Cession]
+  countryRisk: LcbftLevel! @deprecated(reason: "Use countryRiskDetailed instead")
+  activitySectorRisk: LcbftLevel! @deprecated(reason: "Use activitySectorRiskDetailed instead")
+  relationshipRisk: LcbftLevel! @deprecated(reason: "Use relationshipRiskDetailed instead")
+  ppeRisk: LcbftLevel! @deprecated(reason: "Use ppeRiskDetailed instead")
+  sanctionsRisk: LcbftLevel! @deprecated(reason: "Use sanctionsRiskDetailed instead")
+  countryRiskDetailed: LcbftLevelDetailed!
+  activitySectorRiskDetailed: LcbftLevelDetailed!
+  relationshipRiskDetailed: LcbftLevelDetailed!
+  ppeRiskDetailed: LcbftLevelDetailed!
+  sanctionsRiskDetailed: LcbftLevelDetailed!
+  adequate: Boolean
+  distributedByAdvisor: DistributorAdvisor
+  signedDocuments: [AccountDocumentControl]
+  signersStatuses: [SignerStatus!]!
+  history(
+    "One of 'account', 'kyc' or 'lcbft'"
+    type: String!
+  ): [AccountLogHistory]!
+  kycStep: ConfigurableFormStep
+  accountComments: [AccountComment]
+  accountPersona: AccountPersonaDetailed!
+  suggestedExpirationDate: DateTime
+  portfolio(
+    "The portfolio will be rendered as the state it was at this date"
+    visualizationDate: Date
+  ): Portfolio
+  corporateInfo: CorporateInfo!
+  representativeLegalInfo: LegalInfo
+  taxationType: CorporateAccountTaxationTypeDetailed
+  possibleTaxationTypes: [CorporateAccountTaxationTypeDetailed]
+  company: Company
+  distributor: Distributor!
+  distributorNetwork: DistributorNetwork
+}
+
+type CompanyAccount implements Account {
+  id: ID!
+  createdAt: DateTime!
+  documentControls: [AccountDocumentControl]
+  mostRecentVialinkControl: VialinkControl
+  label: String!
+  type: AccountType! @deprecated(reason: "Use `accountType`")
+  accountType: AccountTypeDetailed!
+  lcbftLevel: LcbftLevel! @deprecated(reason: "Use investorInfo.lcbftLevel instead")
+  lcbftLevelDetailed: LcbftLevelDetailed! @deprecated(reason: "Use investorInfo.lcbftLevelDetailed instead")
+  kycExpirationDate: DateTime
+  kycStatus: KycStatus! @deprecated(reason: "use kycStatusDetailed instead")
+  kycStatusDetailed: KycStatusDetailed!
+  kycRefusedComment: String
+  investorInfo: InvestorInfo!
+  user(
+    "Optional user ID to return instead of the account's default user"
+    userId: ID
+  ): User
+  canValidateKyc: Boolean
+  kycAnalysisResult: Array
+  accountDocuments: [AccountDocument]
+  bankAccounts: [BankAccount]
+  bankAccountByBankAccountType(
+    bankAccountType: BankAccountType!
+
+    "If true, will return the default bank account if no bank account of the given type is found"
+    fallbackToDefault: Boolean = false
+  ): BankAccount
+  accountSecurityContracts: [AccountSecurityContract]
+  investmentsAndTransfers(securityId: ID, transactionMoneyMovementState: TransactionMoneyMovementState): [Transaction]
+  investments(operationStates: [OperationState]): [Investment]
+  cessions(securityId: ID): [Cession]
+  countryRisk: LcbftLevel! @deprecated(reason: "Use countryRiskDetailed instead")
+  activitySectorRisk: LcbftLevel! @deprecated(reason: "Use activitySectorRiskDetailed instead")
+  relationshipRisk: LcbftLevel! @deprecated(reason: "Use relationshipRiskDetailed instead")
+  ppeRisk: LcbftLevel! @deprecated(reason: "Use ppeRiskDetailed instead")
+  sanctionsRisk: LcbftLevel! @deprecated(reason: "Use sanctionsRiskDetailed instead")
+  countryRiskDetailed: LcbftLevelDetailed!
+  activitySectorRiskDetailed: LcbftLevelDetailed!
+  relationshipRiskDetailed: LcbftLevelDetailed!
+  ppeRiskDetailed: LcbftLevelDetailed!
+  sanctionsRiskDetailed: LcbftLevelDetailed!
+  adequate: Boolean
+  distributedByAdvisor: DistributorAdvisor
+  signedDocuments: [AccountDocumentControl]
+  signersStatuses: [SignerStatus!]!
+  history(
+    "One of 'account', 'kyc' or 'lcbft'"
+    type: String!
+  ): [AccountLogHistory]!
+  kycStep: ConfigurableFormStep
+  accountComments: [AccountComment]
+  accountPersona: AccountPersonaDetailed!
+  suggestedExpirationDate: DateTime
+  portfolio(
+    "The portfolio will be rendered as the state it was at this date"
+    visualizationDate: Date
+  ): Portfolio
+  corporateInfo: CorporateInfo!
+  representativeLegalInfo: LegalInfo
+  taxationType: CorporateAccountTaxationTypeDetailed
+  possibleTaxationTypes: [CorporateAccountTaxationTypeDetailed]
+  company: Company!
+  distributor: Distributor
+  distributorNetwork: DistributorNetwork
+}
+
+type CorporateAccount implements Account {
+  id: ID!
+  createdAt: DateTime!
+  documentControls: [AccountDocumentControl]
+  mostRecentVialinkControl: VialinkControl
+  label: String!
+  type: AccountType! @deprecated(reason: "Use `accountType`")
+  accountType: AccountTypeDetailed!
+  lcbftLevel: LcbftLevel! @deprecated(reason: "Use investorInfo.lcbftLevel instead")
+  lcbftLevelDetailed: LcbftLevelDetailed! @deprecated(reason: "Use investorInfo.lcbftLevelDetailed instead")
+  kycExpirationDate: DateTime
+  kycStatus: KycStatus! @deprecated(reason: "use kycStatusDetailed instead")
+  kycStatusDetailed: KycStatusDetailed!
+  kycRefusedComment: String
+  investorInfo: InvestorInfo!
+  user(
+    "Optional user ID to return instead of the account's default user"
+    userId: ID
+  ): User
+  canValidateKyc: Boolean
+  kycAnalysisResult: Array
+  accountDocuments: [AccountDocument]
+  bankAccounts: [BankAccount]
+  bankAccountByBankAccountType(
+    bankAccountType: BankAccountType!
+
+    "If true, will return the default bank account if no bank account of the given type is found"
+    fallbackToDefault: Boolean = false
+  ): BankAccount
+  accountSecurityContracts: [AccountSecurityContract]
+  investmentsAndTransfers(securityId: ID, transactionMoneyMovementState: TransactionMoneyMovementState): [Transaction]
+  investments(operationStates: [OperationState]): [Investment]
+  cessions(securityId: ID): [Cession]
+  countryRisk: LcbftLevel! @deprecated(reason: "Use countryRiskDetailed instead")
+  activitySectorRisk: LcbftLevel! @deprecated(reason: "Use activitySectorRiskDetailed instead")
+  relationshipRisk: LcbftLevel! @deprecated(reason: "Use relationshipRiskDetailed instead")
+  ppeRisk: LcbftLevel! @deprecated(reason: "Use ppeRiskDetailed instead")
+  sanctionsRisk: LcbftLevel! @deprecated(reason: "Use sanctionsRiskDetailed instead")
+  countryRiskDetailed: LcbftLevelDetailed!
+  activitySectorRiskDetailed: LcbftLevelDetailed!
+  relationshipRiskDetailed: LcbftLevelDetailed!
+  ppeRiskDetailed: LcbftLevelDetailed!
+  sanctionsRiskDetailed: LcbftLevelDetailed!
+  adequate: Boolean
+  distributedByAdvisor: DistributorAdvisor
+  signedDocuments: [AccountDocumentControl]
+  signersStatuses: [SignerStatus!]!
+  history(
+    "One of 'account', 'kyc' or 'lcbft'"
+    type: String!
+  ): [AccountLogHistory]!
+  kycStep: ConfigurableFormStep
+  accountComments: [AccountComment]
+  accountPersona: AccountPersonaDetailed!
+  suggestedExpirationDate: DateTime
+  portfolio(
+    "The portfolio will be rendered as the state it was at this date"
+    visualizationDate: Date
+  ): Portfolio
+  corporateInfo: CorporateInfo!
+  representativeLegalInfo: LegalInfo
+  taxationType: CorporateAccountTaxationTypeDetailed
+  possibleTaxationTypes: [CorporateAccountTaxationTypeDetailed]
+  company: Company
+  distributor: Distributor
+  distributorNetwork: DistributorNetwork
+}
+
+type IndividualAccount implements Account {
+  id: ID!
+  createdAt: DateTime!
+  documentControls: [AccountDocumentControl]
+  mostRecentVialinkControl: VialinkControl
+  label: String!
+  type: AccountType! @deprecated(reason: "Use `accountType`")
+  accountType: AccountTypeDetailed!
+  lcbftLevel: LcbftLevel! @deprecated(reason: "Use investorInfo.lcbftLevel instead")
+  lcbftLevelDetailed: LcbftLevelDetailed! @deprecated(reason: "Use investorInfo.lcbftLevelDetailed instead")
+  kycExpirationDate: DateTime
+  kycStatus: KycStatus! @deprecated(reason: "use kycStatusDetailed instead")
+  kycStatusDetailed: KycStatusDetailed!
+  kycRefusedComment: String
+  investorInfo: InvestorInfo!
+  user(
+    "Optional user ID to return instead of the account's default user"
+    userId: ID
+  ): User
+  canValidateKyc: Boolean
+  kycAnalysisResult: Array
+  accountDocuments: [AccountDocument]
+  bankAccounts: [BankAccount]
+  bankAccountByBankAccountType(
+    bankAccountType: BankAccountType!
+
+    "If true, will return the default bank account if no bank account of the given type is found"
+    fallbackToDefault: Boolean = false
+  ): BankAccount
+  accountSecurityContracts: [AccountSecurityContract]
+  investmentsAndTransfers(securityId: ID, transactionMoneyMovementState: TransactionMoneyMovementState): [Transaction]
+  investments(operationStates: [OperationState]): [Investment]
+  cessions(securityId: ID): [Cession]
+  countryRisk: LcbftLevel! @deprecated(reason: "Use countryRiskDetailed instead")
+  activitySectorRisk: LcbftLevel! @deprecated(reason: "Use activitySectorRiskDetailed instead")
+  relationshipRisk: LcbftLevel! @deprecated(reason: "Use relationshipRiskDetailed instead")
+  ppeRisk: LcbftLevel! @deprecated(reason: "Use ppeRiskDetailed instead")
+  sanctionsRisk: LcbftLevel! @deprecated(reason: "Use sanctionsRiskDetailed instead")
+  countryRiskDetailed: LcbftLevelDetailed!
+  activitySectorRiskDetailed: LcbftLevelDetailed!
+  relationshipRiskDetailed: LcbftLevelDetailed!
+  ppeRiskDetailed: LcbftLevelDetailed!
+  sanctionsRiskDetailed: LcbftLevelDetailed!
+  adequate: Boolean
+  distributedByAdvisor: DistributorAdvisor
+  signedDocuments: [AccountDocumentControl]
+  signersStatuses: [SignerStatus!]!
+  history(
+    "One of 'account', 'kyc' or 'lcbft'"
+    type: String!
+  ): [AccountLogHistory]!
+  kycStep: ConfigurableFormStep
+  accountComments: [AccountComment]
+  accountPersona: AccountPersonaDetailed!
+  suggestedExpirationDate: DateTime
+  portfolio(
+    "The portfolio will be rendered as the state it was at this date"
+    visualizationDate: Date
+  ): Portfolio
+  personalInfo: PersonalInfo!
+  pfuExempted: Boolean!
+  crossBorderWorker: Boolean!
+}
+
+type PersonalInfo implements LegalInfo {
+  id: ID!
+  address: Address
+  gender: String
+  firstName: String
+  lastName: String
+  mobile: String
+  birthDate: Date
+  birthLocation: String
+  birthLocationCountry: Country
+  nationality: Country
+  matrimonialSituation: String
+  matrimonialRegime: String
+  usPerson: Boolean
+  pep: Boolean
+  activitySector: ActivitySector
+  customProperties: [PersonalInfoCustomProperty]
+}
+
+type PersonalInfoCustomProperty {
+  entityProperty: EntityProperty!
+  value: Array
+}
+
+enum CountryRiskCode {
+  High
+  Low
+  Maximum
+  Medium
+  Minimum
+}
+
+type BankCheckPaymentInformation implements PaymentInformation {
+  paymentMethod: PaymentMethod
+  paymentMethodDetailed: PaymentMethodDetailed
+  checkRecipientAddress: String
+  checkOrder: String
+}
+
+type CreditTransferPaymentInformation implements PaymentInformation {
+  paymentMethod: PaymentMethod
+  paymentMethodDetailed: PaymentMethodDetailed
+  holderName: String
+  iban: String
+  bic: String
+  bankWireReference: String
+  document: Document
+  isVirtualIban: Boolean
+}
+
+type DirectDebitPaymentInformation implements PaymentInformation {
+  paymentMethod: PaymentMethod
+  paymentMethodDetailed: PaymentMethodDetailed
+  holderName: String
+  iban: String
+  bic: String
+  urm: String
+}
+
+"A User"
+type InvestorUser implements User {
+  id: ID
+  active: Boolean
+  email: String!
+  lastLogin: DateTime
+  mobile: String
+  firstName: String!
+  lastName: String!
+  persona: Persona!
+  personaDetailed: PersonaDetailed!
+  accounts: [Account]!
+  roles: [String]
+  emailsInCopy: [String]
+  isPasswordDefined: Boolean
+  portfolio(
+    "The portfolio will be rendered as the state it was at this date"
+    visualizationDate: Date
+
+    "The account Id"
+    accountId: ID
+  ): Portfolio
+  unactiveComment: String
+  acceptedAt: DateTime
+  createdAt: DateTime
+  userSegments: [UserSegment]
+  segments: [Segment]
+  distributedByAdvisor: DistributorAdvisor @deprecated(reason: "The advisor is now on the Account object")
+  distributedBy: Distributor @deprecated(reason: "The advisor is now on the Account object")
+  representedDistributorNetwork: DistributorNetwork
+  tosAcknowledgedAt: DateTime
+  locale: SupportedLocale
+  localeDetailed: SupportedLocaleDetailed
+  signupUrlParameters: UrlParameters
+}
+
+"A User"
+type DistributorUser implements User {
+  id: ID
+  active: Boolean
+  email: String!
+  lastLogin: DateTime
+  mobile: String
+  firstName: String!
+  lastName: String!
+  persona: Persona!
+  personaDetailed: PersonaDetailed!
+  accounts: [Account]!
+  roles: [String]
+  emailsInCopy: [String]
+  isPasswordDefined: Boolean
+  portfolio(
+    "The portfolio will be rendered as the state it was at this date"
+    visualizationDate: Date
+
+    "The account Id"
+    accountId: ID
+  ): Portfolio
+  unactiveComment: String
+  acceptedAt: DateTime
+  createdAt: DateTime
+  userSegments: [UserSegment]
+  segments: [Segment]
+  distributedByAdvisor: DistributorAdvisor @deprecated(reason: "The advisor is now on the Account object")
+  distributedBy: Distributor @deprecated(reason: "The advisor is now on the Account object")
+  representedDistributorNetwork: DistributorNetwork
+  tosAcknowledgedAt: DateTime
+  locale: SupportedLocale
+  localeDetailed: SupportedLocaleDetailed
+  signupUrlParameters: UrlParameters
+  representedDistributor: Distributor!
+}
+
+"A User"
+type DistributorAdvisorUser implements User {
+  id: ID
+  active: Boolean
+  email: String!
+  lastLogin: DateTime
+  mobile: String
+  firstName: String!
+  lastName: String!
+  persona: Persona!
+  personaDetailed: PersonaDetailed!
+  accounts: [Account]!
+  roles: [String]
+  emailsInCopy: [String]
+  isPasswordDefined: Boolean
+  portfolio(
+    "The portfolio will be rendered as the state it was at this date"
+    visualizationDate: Date
+
+    "The account Id"
+    accountId: ID
+  ): Portfolio
+  unactiveComment: String
+  acceptedAt: DateTime
+  createdAt: DateTime
+  userSegments: [UserSegment]
+  segments: [Segment]
+  distributedByAdvisor: DistributorAdvisor @deprecated(reason: "The advisor is now on the Account object")
+  distributedBy: Distributor @deprecated(reason: "The advisor is now on the Account object")
+  representedDistributorNetwork: DistributorNetwork
+  tosAcknowledgedAt: DateTime
+  locale: SupportedLocale
+  localeDetailed: SupportedLocaleDetailed
+  signupUrlParameters: UrlParameters
+  representedDistributorAdvisor: DistributorAdvisor!
+}
+
+"A User"
+type DistributorNetworkUser implements User {
+  id: ID
+  active: Boolean
+  email: String!
+  lastLogin: DateTime
+  mobile: String
+  firstName: String!
+  lastName: String!
+  persona: Persona!
+  personaDetailed: PersonaDetailed!
+  accounts: [Account]!
+  roles: [String]
+  emailsInCopy: [String]
+  isPasswordDefined: Boolean
+  portfolio(
+    "The portfolio will be rendered as the state it was at this date"
+    visualizationDate: Date
+
+    "The account Id"
+    accountId: ID
+  ): Portfolio
+  unactiveComment: String
+  acceptedAt: DateTime
+  createdAt: DateTime
+  userSegments: [UserSegment]
+  segments: [Segment]
+  distributedByAdvisor: DistributorAdvisor @deprecated(reason: "The advisor is now on the Account object")
+  distributedBy: Distributor @deprecated(reason: "The advisor is now on the Account object")
+  representedDistributorNetwork: DistributorNetwork!
+  tosAcknowledgedAt: DateTime
+  locale: SupportedLocale
+  localeDetailed: SupportedLocaleDetailed
+  signupUrlParameters: UrlParameters
+}
+
+"A User"
+type AdminUser implements User {
+  id: ID
+  active: Boolean
+  email: String!
+  lastLogin: DateTime
+  mobile: String
+  firstName: String!
+  lastName: String!
+  persona: Persona!
+  personaDetailed: PersonaDetailed!
+  accounts: [Account]!
+  roles: [String]
+  emailsInCopy: [String]
+  isPasswordDefined: Boolean
+  portfolio(
+    "The portfolio will be rendered as the state it was at this date"
+    visualizationDate: Date
+
+    "The account Id"
+    accountId: ID
+  ): Portfolio
+  unactiveComment: String
+  acceptedAt: DateTime
+  createdAt: DateTime
+  userSegments: [UserSegment]
+  segments: [Segment]
+  distributedByAdvisor: DistributorAdvisor @deprecated(reason: "The advisor is now on the Account object")
+  distributedBy: Distributor @deprecated(reason: "The advisor is now on the Account object")
+  representedDistributorNetwork: DistributorNetwork
+  tosAcknowledgedAt: DateTime
+  locale: SupportedLocale
+  localeDetailed: SupportedLocaleDetailed
+  signupUrlParameters: UrlParameters
+}
+
+"A Security fee model"
+type SecurityFeePatternBase implements SecurityFeePattern {
+  id: ID!
+  name: String!
+  securityFees: [SecurityFee]!
+  security: Security!
+  isDefault: Boolean!
+  isDeleted: Boolean!
+}
+
+"A Security fee model"
+type SecurityFeePatternDistributor implements SecurityFeePattern {
+  id: ID!
+  name: String!
+  securityFees: [SecurityFee]!
+  security: Security!
+  isDefault: Boolean!
+  isDeleted: Boolean!
+  distributor: Distributor!
+}
+
+"A Document Template"
+type DocumentTemplateFillablePdf implements DocumentTemplate {
+  id: ID
+  name: String
+  localizedName: [LocalizedString]
+  type: DocumentTypeDetailed
+  fields: Array
+  document: Document
+}
+
+"A Document Template"
+type DocumentTemplateContentHtml implements DocumentTemplate {
+  id: ID
+  name: String
+  localizedName: [LocalizedString]
+  type: DocumentTypeDetailed
+  fields: Array
+  content: String
+  localizedContent: [LocalizedString]
+}
+
+"An Account security contract with recurrence"
+type RecurrenceContract implements AccountSecurityContract {
+  id: ID!
+  account: Account!
+  security: Security!
+  pledges: [Pledge]
+  redeemableSecuritiesNumber: Float
+  currentWithdrawalPrice: Amount
+  frequency: RecurrenceFrequency! @deprecated(reason: "Use ascRecurrenceFrequency instead")
+  ascRecurrenceFrequency: RecurrenceFrequencyDetailed!
+  amount: Amount!
+  startAt: Date
+  endAt: Date
+  dismembermentType: DismembermentTypeDetailed
+  dismembermentDurationInYears: Int
+}
+
+enum RecurrenceFrequency {
+  None
+  Monthly
+  Quarterly
+  Biannual
+  Annual
+}
+
+type RecurrenceFrequencyDetailed {
+  code: RecurrenceFrequency!
+  label: String!
+}
+
+"An Account security contract with automatic distribution reinvestment"
+type AutomaticDistributionReinvestmentContract implements AccountSecurityContract {
+  id: ID!
+  account: Account!
+  security: Security!
+  pledges: [Pledge]
+  redeemableSecuritiesNumber: Float
+  currentWithdrawalPrice: Amount
+  percentage: Float
+}
+
+"The query API"
+type RootQuery {
+  GetAccountPersona: [AccountPersonaDetailed]!
+  GetBankAccountStatuses: [BankAccountStatusDetailed]!
+  GetBankAccountTypes: [BankAccountTypeDetailed]!
+  GetFormQuestionDataStrategies: [FormQuestionDataStrategyDetailed]!
+  GetFormQuestionDataStrategyDefinitions: [FormQuestionDataStrategyDefinitionDetailed]!
+  GetDmsDocumentCategories: [DmsDocumentCategoryDetailed]!
+  GetEntityPropertyTextTypes: [EntityPropertyTextTypeDetailed]!
+  GetDocumentBatchGenerationMethods: [DocumentBatchGenerationMethodDetailed]!
+  GetDocumentBatchTargets: [DocumentBatchTargetDetailed]!
+  GetDocumentTypes: [DocumentTypeDetailed]!
+  GetDataTableTypes: [DataTableTypeDetailed]!
+  GetGeneralAssemblyAttendances: [GeneralAssemblyAttendanceDetailed]!
+  GetGeneralAssemblyConveningNumbers: [GeneralAssemblyConveningNumberDetailed]!
+  GetGeneralAssemblyResolutionStatuses: [GeneralAssemblyResolutionStatusDetailed]!
+  GetGeneralAssemblyResolutionTypes: [GeneralAssemblyResolutionTypeDetailed]!
+  GetGeneralAssemblyTypes: [GeneralAssemblyTypeDetailed]!
+  GetGeneralAssemblyVoteResponses: [GeneralAssemblyVoteResponseDetailed]!
+  GetQuorumCalculationStrategies: [QuorumCalculationStrategyDetailed]!
+  GetInvestmentModalitiesStatuses: [InvestmentModalitiesStatusDetailed]!
+  GetLcbftLevels: [LcbftLevelDetailed]!
+  GetSupportedLocales: [SupportedLocaleDetailed]!
+  GetSignatureMethods: [SignatureMethodDetailed]!
+  GetRetrocessionsStatuses: [RetrocessionStateDetailed]!
+  GetKycStatuses: [KycStatusDetailed]!
+  GetTransactionMoneyMovementStates: [TransactionMoneyMovementStateDetailed]!
+  GetEntityNames: [EntityNameDetailed]!
+  GetProviderTypes: [ProviderTypeDetailed]!
+  GetPersonas: [PersonaDetailed]!
+  GetTransactionTypes: [TransactionTypeDetailed]!
+  GetTransactionStates: [TransactionStateDetailed]!
+  GetFeeTypes: [FeeTypeDetailed]!
+  GetInvestorsSelectionStrategies: [InvestorsSelectionStrategyDetailed]!
+  GetSecurityOperationStatuses: [SecurityOperationStatusDetailed]!
+  GetSecurityOperationTypes: [SecurityOperationTypeDetailed]!
+  GetSecurityOperationInvestmentTypes: [SecurityOperationInvestmentTypeDetailed]!
+  GetDocumentGenerationBehaviours: [DocumentGenerationBehaviourDetailed]!
+  GetAlgorithmTechnicalCodes: [AlgorithmTechnicalCodeDetailed]!
+  GetDistributionTaxations: [DistributionTaxationDetailed]!
+  GetDistributionTypes: [DistributionTypeDetailed]!
+  GetDistributionPeriodicities: [DistributionPeriodicityDetailed]!
+  GetTargetStatus: [TargetStatusDetailed]!
+  GetOperationTypes: [OperationTypeDetailed]!
+  GetEntityPropertyTypes: [EntityPropertyTypeDetailed]!
+  GetDismembermentTypes: [DismembermentTypeDetailed]!
+  GetCompanyTypes: [CompanyTypeDetailed]!
+  GetSignerTypes: [SignerTypeDetailed]!
+  GetSecurityTypes: [SecurityTypeDetailed]!
+  GetDocumentControlStatus: [DocumentControlStatusDetailed]!
+  GetTaxationTypes: [TaxationTypeDetailed]!
+  GetSegmentTypes: [SegmentTypeDetailed]!
+  GetOperationStates: [OperationStateDetailed]!
+  GetAccountTypes: [AccountTypeDetailed]!
+  GetComplianceControlLevel: [ComplianceControlLevelDetailed]!
+  GetTransferViewerActingLikes: [TransferViewerActingLikeDetailed]!
+  GetAlgorithmCategories: [AlgorithmCategoryDetailed]!
+  GetAccountingRecordTypes: [AccountingRecordTypeDetailed]!
+  GetSubscriptionSteps: [SubscriptionStepDetailed]!
+  GetUser(
+    "The user Id"
+    id: ID!
+  ): User
+  GetUsers(
+    resultsPerPage: Int
+    page: Int = 1
+
+    "Filter on active status. Null to get pending user activations."
+    isActive: Boolean
+
+    "Filter on persona"
+    personas: [Persona!]
+
+    "User is accepted or not. Null to ignore."
+    isAccepted: Boolean
+
+    "Term to search in id, firstname, lastname, email or mobile"
+    search: String
+
+    sortingFields: [SortingField] = []
+    filters: UserFiltersInput = {  }
+  ): UserConnection
+  GetDistributors(
+    resultsPerPage: Int
+    page: Int = 1
+
+    "Filter on kycStatus"
+    kycStatus: KycStatus
+
+    "Filter on active status. Null to get pending distributor activations."
+    isActive: Boolean
+
+    "User is accepted or not. Null to ignore."
+    isAccepted: Boolean
+
+    sortingFields: [SortingField] = []
+
+    "Term to search in id, firstname, lastname, email or mobile"
+    search: String
+  ): DistributorConnection
+  GetDistributorAdvisors(
+    resultsPerPage: Int
+    page: Int = 1
+    sortingFields: [SortingField] = []
+
+    "Term to search in id, firstname, lastname, email or mobile"
+    search: String
+
+    distributorId: ID
+
+    "Ignore the distributor user"
+    ignoreDistributorUser: Boolean
+  ): DistributorAdvisorConnection
+  GetDistributorNetworks(
+    resultsPerPage: Int
+    page: Int = 1
+
+    "Filter on kycStatus"
+    kycStatus: KycStatus
+
+    "Filter on active status. Null to get pending distributor activations."
+    isActive: Boolean
+
+    "User is accepted or not. Null to ignore."
+    isAccepted: Boolean
+
+    sortingFields: [SortingField] = []
+
+    "Term to search in id, firstname, lastname, email or mobile"
+    search: String
+  ): DistributorNetworkConnection
+  GetAccountComment(
+    "The account comment Id"
+    id: ID
+  ): AccountComment
+  GetAccount(
+    "The account Id"
+    id: ID
+  ): Account
+  GetAccounts(
+    resultsPerPage: Int
+    page: Int = 1
+
+    "Filter on kycStatus"
+    kycStatus: KycStatus
+
+    "Filter on persona"
+    personas: [Persona!]
+
+    "Filter on lcbftLevel"
+    lcbftLevel: LcbftLevel
+
+    sortingFields: [SortingField] = []
+
+    "Term to search in id, firstname, lastname, email or mobile"
+    search: String
+  ): AccountConnection
+  GetKycsToReview(
+    resultsPerPage: Int
+    page: Int = 1
+    sortingFields: [SortingField] = []
+
+    "Term to search in id, firstname, lastname, email or mobile"
+    search: String
+  ): AccountConnection
+  GetInvestmentAccounts(
+    resultsPerPage: Int
+    page: Int = 1
+
+    "Filter on kycStatus"
+    kycStatus: KycStatus
+
+    "Filter on lcbftLevel"
+    lcbftLevel: LcbftLevel
+
+    "Filter on active status. Null to get pending user activations."
+    isActive: Boolean
+
+    "Filter on persona"
+    personas: [Persona!]
+
+    "User is accepted or not. Null to ignore."
+    isAccepted: Boolean
+
+    "Term to search in id, firstname, lastname, email or mobile"
+    search: String
+
+    sortingFields: [SortingField] = []
+  ): AccountConnection
+  GetParticipationSummary(
+    "The account Id"
+    accountId: ID!
+
+    "The security Id"
+    securityId: ID!
+
+    date: Date!
+    filters: TransactionFiltersInput
+  ): ParticipationSummary
+  GetParticipationsSummary(
+    "The account Id"
+    accountId: ID!
+
+    date: Date!
+    filters: TransactionFiltersInput
+  ): [ParticipationSummary]
+  GetDealroomSummary(
+    "The user Id"
+    userId: ID!
+
+    "The security issuer Id"
+    issuerId: ID!
+  ): DealroomSummary
+  GetSecurityOperations(
+    "Security operation Types to filter on"
+    securityOperationTypes: [SecurityOperationType]
+  ): [SecurityOperation]
+  GetSecurityOperation(
+    "The security operation Id"
+    securityOperationId: ID!
+  ): SecurityOperation
+  GetBlockingFlows(
+    "The transaction money movement Id"
+    transactionMoneyMovementId: ID!
+  ): [BlockingFlowDetail]!
+  GetSecurity(
+    "The security Id"
+    id: ID!
+  ): Security
+  GetSecurityFee(
+    "The security fee Id"
+    id: ID!
+  ): SecurityFee
+
+  "Get compliance control alerts"
+  GetKycAlerts(
+    resultsPerPage: Int
+    page: Int = 1
+
+    "Filter on kycStatus"
+    kycStatus: KycStatus
+
+    "Filter on lcbftLevel"
+    lcbftLevel: LcbftLevel
+
+    "Filter on ComplianceControl level"
+    complianceControlLevel: ComplianceControlLevel
+
+    "Filter on persona"
+    personas: [Persona!]
+  ): ComplianceControlConnection
+
+  "Get a compliance control"
+  GetComplianceControl(complianceControlId: ID!): ComplianceControl
+
+  SimulateInvestmentChange(investmentId: ID!, dismembermentType: DismembermentType, dismembermentDurationInYears: Int, inputAmount: Amount, inputSecuritiesNumber: Float, lifeDismembermentDiscount: Float): Investment!
+  GetInvestments(
+    start: Int
+    end: Int
+    resultsPerPage: Int
+    page: Int = 1
+    operationId: ID
+
+    "⚠️ DEPRECATED : Use filters.status instead"
+    succeededOrders: Boolean
+
+    "⚠️ DEPRECATED : No replacement provided for the moment. Contact us if needed"
+    status: TransactionState
+
+    "⚠️ DEPRECATED : Use filters.source instead"
+    source: InvestmentSource
+
+    "⚠️ DEPRECATED : No replacement provided for the moment. Contact us if needed"
+    excludePledged: Boolean
+
+    "⚠️ DEPRECATED : Use sortingColumns instead"
+    sortingFields: [SortingField]
+
+    "Term to search in id, firstname, lastname, email or mobile"
+    search: String
+
+    sortingColumns: [SortingColumn]
+    filters: InvestmentFiltersInput
+  ): InvestmentConnection
+  GetPendingDismemberedInvestments(
+    resultsPerPage: Int
+    page: Int = 1
+    operationId: ID!
+    filters: PendingDismemberedInvestmentFiltersInput
+
+    "Term to search in id, firstname, lastname, email or mobile"
+    search: String
+  ): InvestmentConnection
+  GetInvestment(id: ID!): Investment!
+  GetVehicle(id: ID!): Vehicle!
+  GetVehicles: [Vehicle]
+  GetTarget(id: ID!): Target!
+  GetTargets: [Target]
+  GetCommunications(userId: ID, issuerId: ID): [Communication]
+  GetCommunication(id: ID!, userId: ID): Communication
+  GetTransactionMoneyMovements(userId: ID!, issuerId: ID): [TransactionMoneyMovement]
+  GetTransactions(userId: ID!, issuerId: ID, states: [TransactionState]): [Transaction]
+  GetTransaction(id: ID!): Transaction
+  GetMenu: Array
+  GetKycFormSteps(accountId: ID!, investmentId: ID): [ConfigurableFormStep]
+  GetKycForm(accountId: ID!, formStep: String!, investmentId: ID): [FormQuestionWithAnswer]
+  GetPublicNotificationTypes: [PublicNotificationType]!
+  GetNotificationTypes: [NotificationType]!
+  GetNotificationType(id: NotificationTypeId!): NotificationType
+  GetRetrocessions(
+    resultsPerPage: Int
+    page: Int = 1
+    operationId: ID
+    feeType: FeeType
+    transactionStatus: TransactionState
+    retrocessionStatus: RetrocessionState
+
+    "Term to search in investor name, distributor name or operation name"
+    search: String
+  ): TransactionFeeConnection
+  GetInvoices(
+    resultsPerPage: Int
+    page: Int = 1
+    bankAccountType: BankAccountType
+    vehicleId: ID
+
+    "Value of the TransactionMoneyMovementState Enum"
+    status: String
+
+    "Term to search in distributor name, invoice number or vehicle name"
+    search: String
+  ): InvoiceConnection
+  GetOperations(states: [OperationState], isSubscribed: Boolean): [Operation]
+  GetOperation(operationId: ID!): Operation
+  GetAlgorithms(algorithmCategory: AlgorithmCategory!): [Algorithm]
+  GetPmsSectors: [PmsSector]
+  GetInvestmentFormSteps(investmentId: ID!): [ConfigurableFormStep]
+  GetInvestmentForm(investmentId: ID!, formStep: String!): [FormQuestionWithAnswer]
+  GetConfigurableForms(configurableFormType: ConfigurableFormType): [ConfigurableForm]
+  GetConfigurableFormQuestion(configurableFormQuestionId: ID!): ConfigurableFormQuestion
+  GetCountries(onlyDisplayed: Boolean): [Country]
+  GetDistributor(distributorId: ID!): Distributor
+  GetLegalStatuses: [LegalStatus]
+  GetSegments: [Segment]
+  GetSegment(segmentId: ID!): Segment
+  GetEntityProperties(
+    resultsPerPage: Int
+    page: Int = 1
+    entityName: EntityName
+    type: EntityPropertyType
+
+    "Term to search in object or typeof question"
+    search: String
+  ): EntityPropertyConnection
+  GetEntityProperty(entityPropertyId: ID!): EntityProperty
+  GetAccountDocumentTypes: [AccountDocumentType]
+  GetDocumentTemplates(filters: DocumentTemplateFiltersInput = {  }): [DocumentTemplate]
+  GetDocumentTemplate(id: ID!): DocumentTemplate
+  GetReferentialChoices(entityPropertyId: ID!): [ReferentialChoice]
+  GetCompanies: [Company]
+  GetCompany(id: ID!): Company!
+  GetMyAccountSecurityContracts(securityId: ID!): [AccountSecurityContract]
+  GetAccountSecurityContracts(securityId: ID!, userId: ID!): [AccountSecurityContract]
+  GetConfigurableFormHasSteps(configurableFormType: ConfigurableFormType): [ConfigurableFormHasStep]
+  GetConfigurableForm(id: ID!): ConfigurableForm
+  GetConfigurableFormStep(id: ID!): ConfigurableFormStep
+  GetDataTables: [DataTable]
+  GetDataTable(technicalCode: String!): DataTable
+  GetPledges(
+    resultsPerPage: Int
+    page: Int = 1
+    operationId: ID
+
+    "Term to search in id, firstname, lastname, email or mobile"
+    search: String
+  ): PledgeConnection
+  GetAdmins(search: String): [User]
+  GetSecurityOperationInvestment(securityOperationInvestmentId: ID!): SecurityOperationInvestment
+  GetSecurityOperationInvestments(operationId: ID!): [SecurityOperationInvestment]
+  GetTransactionFlowDebugOutput(accountId: ID!, securityId: ID!, maxDate: Date): String!
+  GetGeneralAssemblies(
+    "Term to search in id, name, vehicle"
+    search: String
+  ): [GeneralAssembly]
+  GetGeneralAssembly(id: ID!): GeneralAssembly
+  GetGeneralAssembliesDocuments(userId: ID!, issuerId: ID): [GeneralAssemblyAccountDocumentGenerated]
+  GetGeneralAssemblyAccounts(
+    resultsPerPage: Int
+    page: Int = 1
+    generalAssemblyId: ID!
+
+    "Term to search in associated account id, firstname or lastname"
+    search: String
+
+    "Filter by attendance"
+    attendance: GeneralAssemblyAttendance
+
+    sortingFields: [SortingField] = []
+  ): GeneralAssemblyAccountConnection
+  GetGeneralAssemblyResolutions(generalAssemblyId: ID!): [GeneralAssemblyResolution]
+  GetGeneralAssemblyResolution(resolutionId: ID!): GeneralAssemblyResolution
+  GetConfigurableFormQuestionsFromStep(formStepId: ID!): [ConfigurableFormQuestion]
+  GetExportDownload(id: ID!): Document
+  GetUserGeneralAssemblies(userId: ID!, issuerId: ID, states: [GeneralAssemblyState]): [GeneralAssembly]
+  GetTransactionUserDocuments(userId: ID!, issuerId: ID, states: [TransactionState]): [UserDocument!]
+  GetAccountTransactionDocuments(accountId: ID!, issuerId: ID, states: [TransactionState]): [AccountTransactionDocument!]
+  GetAccountGeneralAssembliesDocuments(accountId: ID!, issuerId: ID): [GeneralAssemblyAccountDocumentGenerated]
+  GetAccountTransactionMoneyMovements(accountId: ID!, issuerId: ID): [TransactionMoneyMovement]
+  GetFormQuestionEntityPropertyContextChoices(configurableFormType: ConfigurableFormType!, entityName: EntityName!): [FormQuestionDataStrategyDefinitionDetailed]
+  GetCustomExports(
+    "Term to search in name, description"
+    search: String
+  ): [CustomExport!]
+  GetCustomExport(id: ID!): CustomExport
+  GetDocumentBatches(resultsPerPage: Int, page: Int = 1, search: String, sortingFields: [SortingField] = []): DocumentBatchConnection
+  GetDmsDocuments(
+    start: Int
+    end: Int
+    resultsPerPage: Int
+    page: Int = 1
+
+    "User ID to filter documents by user. Either user ID or account ID but not both."
+    userId: ID
+
+    "Account ID to filter documents by account. Either user ID or account ID but not both."
+    accountId: ID
+
+    "Term to search in document name, account label, issuer company label or operation name"
+    search: String
+
+    sortingColumns: [SortingColumn]
+    filters: DmsDocumentFilterInput
+  ): DmsDocumentConnection
+  GetDocument(documentId: ID!): Document
+  GetDocumentBatch(documentBatchId: ID!): DocumentBatch
+  GetDocumentBatchAccountDocuments(resultsPerPage: Int, page: Int = 1, documentBatchId: ID!, search: String): AccountDocumentConnection
+  GetUpdatedJWTToken: String!
+  GetFormBuilderQuestions(configurableFormStepId: ID!, targetId: ID, configurableFormType: ConfigurableFormType): [ConfigurableFormQuestion]
+}
+
+type DmsDocumentCategoryDetailed {
+  code: DmsDocumentCategory!
+  label: String!
+}
+
+enum DmsDocumentCategory {
+  AccountDocument
+  BankAccountDocument
+  CommunicationDocument
+  ComplianceControlDocument
+  GeneralAssemblyDocument
+  InvoiceDocument
+  OperationDocument
+  SubscriptionDocument
+  TransactionDocument
+}
+
+type EntityPropertyTextTypeDetailed {
+  code: EntityPropertyTextType!
+  label: String!
+}
+
+enum EntityPropertyTextType {
+  Oneliner
+  Multiline
+}
+
+type DocumentBatchGenerationMethodDetailed {
+  code: DocumentBatchGenerationMethod!
+  label: String!
+}
+
+enum DocumentBatchGenerationMethod {
+  TestGeneration
+  FullGeneration
+}
+
+type DocumentBatchTargetDetailed {
+  code: DocumentBatchTarget!
+  label: String!
+}
+
+enum DocumentBatchTarget {
+  AllInvestors
+  Vehicle
+}
+
+type DataTableTypeDetailed {
+  code: DataTableType!
+  label: String!
+  exportProtection: Role
+}
+
+enum DataTableType {
+  AdminAccountsHistoryKyc
+  AdminAccountsHistoryLcbft
+  AdminAccounts
+  AdminCustomers
+  AdminDistributors
+  AdminDistributorNetworks
+  AdminDocumentsBulk
+  AdminEffectiveDates
+  AdminGeneralAssembliesAccounts
+  AdminGeneralAssemblyResolutionVotes
+  AdminInvoices
+  AdminKycLcbftAccount
+  AdminOperationSubscriptions
+  AdminOperationPreSubscriptions
+  AdminPledges
+  AdminRetrocessions
+  AdminSecurityOperationsFlowsCapitalCall
+  AdminSecurityOperationsFlowsCession
+  AdminSecurityOperationsFlowsDismemberment
+  AdminSecurityOperationsFlowsDistribution
+  AdminSecurityOperationsFlowsTransfer
+  AdminSegmentsUsers
+  AdminVehiclesSecuritiesMovements
+  AdminVehiclesSecuritiesRegister
+  AdvisorRetrocessions
+  DistributorInvoices
+  DistributorRetrocessions
+  PortfolioActive
+  PortfolioPending
+  PortfolioSold
+  PmsPortfolioActive
+  PmsPortfolioPending
+  PmsPortfolioSold
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+  DISTRIBUTED_CUSTOMER
+  DISTRIBUTOR
+  DistributorNetwork
+  HYPER_ADMIN
+  SUPER_ADMIN
+  USER
+  CAN_ACCESS_CONFIGURABLE_FORMS
+  CAN_ACCESS_CONFIGURATION
+  CAN_ACCESS_CONFIGURATION_EMAIL
+  CAN_ACCESS_CONFIGURATION_PROPERTIES
+  CanAccessContractOptions
+  CAN_ACCESS_INVOICES
+  CAN_ACCESS_RETROCESSIONS
+  CAN_IMPERSONATE
+  CanEditKyc
+  CanEditInvestment
+  CAN_MANAGE_CONFIGURABLE_FORMS
+  CAN_MANAGE_CONFIGURATION_EMAIL
+  CAN_MANAGE_CONFIGURATION_PROPERTIES
+  CAN_MANAGE_INVOICES
+  CanReviewKyc
+  CHANGE_USER_PERMISSIONS
+  CHANGE_USER_PROPERTIES
+  ChangeUserPersona
+  CanAccessAdminUsers
+  CanAccessCustomExport
+  CanAccessDistributors
+  CanAccessDocumentBatchGeneration
+  CanAccessDocumentTemplate
+  CanAccessGeneralAssemblies
+  CanAccessTransactions
+  CanAddTransactionDocument
+  CanChangeAdvisor
+  CanChangeDistributor
+  CanChangeSegments
+  CanDeleteInvoices
+  CanEditTransactionFee
+  CanExportInvestments
+  CanExportUsers
+  CanExportAccounts
+  CanExportDistributors
+  CanExportRetrocessions
+  CanExportInvoices
+  CanExportTransactions
+  CanExportXml
+  CanManageAdminUsers
+  CanManageAllKycComments
+  CanManageConfigurationHelp
+  CanManageContractOptions
+  CanManageCustomExport
+  CanManageDismembermentPairing
+  CanManageDocumentBatchGeneration
+  CanManageDocumentTemplate
+  CanManageGeneralAssemblies
+  CanManageMessageBlock
+  CanManageOwnKycComments
+  CanManageSubscriptionFeePattern
+  CanManageSuperAdmin
+  CanUpdatePaidSecurityOperationAmount
+  CanUpdateSecurityOperationAmount
+  CanUpdateSignedInvestment
+  CanValidateInvestmentModalities
+  CanValidateKyc
+  FORM_QUESTION_WRITE
+  ROLE_AUTHENTICATED_2FA_NEED_TO_BE_CONFIGURED
+  CanManageUserBankAccount
+  CanManageDistributorBankAccount
+  CanManageVehicleBankAccount
+  CanAccessGlobalDms
+}
+
+type GeneralAssemblyAttendanceDetailed {
+  code: GeneralAssemblyAttendance!
+  label: String!
+}
+
+enum GeneralAssemblyAttendance {
+  Unconfirmed
+  Present
+  Absent
+  Voted
+}
+
+type GeneralAssemblyConveningNumberDetailed {
+  code: GeneralAssemblyConveningNumber!
+  label: String!
+}
+
+enum GeneralAssemblyConveningNumber {
+  One
+  Two
+}
+
+type GeneralAssemblyResolutionStatusDetailed {
+  code: GeneralAssemblyResolutionStatus!
+  label: String!
+}
+
+enum GeneralAssemblyResolutionStatus {
+  ToSubmit
+  VotingInProgress
+  Adopted
+  Rejected
+}
+
+type GeneralAssemblyResolutionTypeDetailed {
+  code: GeneralAssemblyResolutionType!
+  label: String!
+}
+
+enum GeneralAssemblyResolutionType {
+  Ordinary
+  Extraordinary
+}
+
+type GeneralAssemblyTypeDetailed {
+  code: GeneralAssemblyType!
+  label: String!
+}
+
+enum GeneralAssemblyType {
+  Ordinary
+  Extraordinary
+  Mixed
+}
+
+type GeneralAssemblyVoteResponseDetailed {
+  code: GeneralAssemblyVoteResponse!
+  label: String!
+}
+
+enum GeneralAssemblyVoteResponse {
+  For
+  Against
+  Abstention
+}
+
+type QuorumCalculationStrategyDetailed {
+  code: QuorumCalculationStrategy!
+  label: String!
+}
+
+enum QuorumCalculationStrategy {
+  SecuritiesNumber
+  Participant
+}
+
+type InvestorsSelectionStrategyDetailed {
+  code: InvestorsSelectionStrategy!
+  label: String!
+}
+
+enum InvestorsSelectionStrategy {
+  AllInvestors
+  ManualSelection
+  WithdrawalRequest
+}
+
+type DocumentGenerationBehaviourDetailed {
+  code: DocumentGenerationBehaviour!
+  label: String!
+}
+
+enum DocumentGenerationBehaviour {
+  generateNewDocumentsOnly
+  forceGenerateDocuments
+  noDocumentGeneration
+}
+
+type TargetStatusDetailed {
+  code: TargetStatus!
+  label: String!
+}
+
+enum TargetStatus {
+  ACTIVE
+  INACTIVE
+  PARTIAL_CESSION
+  FULL_CEDED_CESSION
+}
+
+type CompanyTypeDetailed {
+  code: CompanyType!
+  label: String!
+}
+
+enum CompanyType {
+  Company
+  Vehicle
+  Target
+}
+
+type SignerTypeDetailed {
+  code: SignerType!
+  label: String!
+}
+
+type TransferViewerActingLikeDetailed {
+  code: TransferViewerActingLike!
+  label: String!
+}
+
+type AccountingRecordTypeDetailed {
+  code: AccountingRecordType!
+  label: String!
+}
+
+enum AccountingRecordType {
+  CHARGE
+  REVENUE
+}
+
+type SubscriptionStepDetailed {
+  code: SubscriptionStep!
+  label: String!
+}
+
+input UserFiltersInput {
+  segmentId: ID!
+}
+
+"A connection to a list of items."
+type UserConnection {
+  totalCount: Int!
+
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+
+  "Information to aid in pagination."
+  edges: [UserEdge]
+}
+
+"An edge in a connection."
+type UserEdge {
+  "The item at the end of the edge."
+  node: User
+
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+"A connection to a list of items."
+type DistributorConnection {
+  totalCount: Int!
+
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+
+  "Information to aid in pagination."
+  edges: [DistributorEdge]
+}
+
+"An edge in a connection."
+type DistributorEdge {
+  "The item at the end of the edge."
+  node: Distributor
+
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+"A connection to a list of items."
+type DistributorAdvisorConnection {
+  totalCount: Int!
+
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+
+  "Information to aid in pagination."
+  edges: [DistributorAdvisorEdge]
+}
+
+"An edge in a connection."
+type DistributorAdvisorEdge {
+  "The item at the end of the edge."
+  node: DistributorAdvisor
+
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+"A connection to a list of items."
+type DistributorNetworkConnection {
+  totalCount: Int!
+
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+
+  "Information to aid in pagination."
+  edges: [DistributorNetworkEdge]
+}
+
+"An edge in a connection."
+type DistributorNetworkEdge {
+  "The item at the end of the edge."
+  node: DistributorNetwork
+
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+"A connection to a list of items."
+type AccountConnection {
+  totalCount: Int!
+
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+
+  "Information to aid in pagination."
+  edges: [AccountEdge]
+}
+
+"An edge in a connection."
+type AccountEdge {
+  "The item at the end of the edge."
+  node: Account
+
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+input TransactionFiltersInput {
+  investedDismemberment: DismembermentType
+}
+
+type ParticipationSummary {
+  security: Security!
+  remainingSecurities: Float!
+
+  "In the case of holding multiple forms of dismemberment, returns null"
+  unpledgedSecurities: Float
+
+  dismemberments: [DismembermentTypeDetailed]!
+  fullCapitalCallRawAmount: Amount!
+  remainingToBeCalled: Amount!
+  calledCapital: Amount!
+  recallableAmount: Amount!
+}
+
+type DealroomSummary {
+  lastOperation: Operation!
+  securities: [Security]!
+  securitiesNumber: Float!
+  averageSecurityPrice: PreciseAmount
+  rawAmount: Amount
+  canManageContracts: Boolean!
+}
+
+"OST that have one or more blocking flows"
+type BlockingFlowDetail {
+  "The blocking flow ID"
+  id: ID!
+
+  "The security operation ID"
+  securityOperationId: ID!
+
+  "The security operation name\/title"
+  securityOperationName: String!
+
+  "The security operation status"
+  tmmStatus: TransactionMoneyMovementState!
+
+  "The OST date"
+  ostDate: DateTime!
+}
+
+"A connection to a list of items."
+type ComplianceControlConnection {
+  totalCount: Int!
+
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+
+  "Information to aid in pagination."
+  edges: [ComplianceControlEdge]
+}
+
+"An edge in a connection."
+type ComplianceControlEdge {
+  "The item at the end of the edge."
+  node: ComplianceControl
+
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+input SortingColumn {
+  column: String!
+  direction: SortingDirection!
+}
+
+enum SortingDirection {
+  Asc
+  Desc
+}
+
+input InvestmentFiltersInput {
+  bankAccountStatus: FilterSetDocumentControlStatusInput
+  committedAmount: FilterNumberWithConditionInput
+  consultancyFees: FilterNullSafeNumberWithConditionInput
+  createdAt: FilterDateWithConditionInput
+  dismembermentDurationInYears: FilterNullSafeNumberWithConditionInput
+  dismembermentType: FilterSetDismembermentTypeInput
+  distributedBy: FilterStringWithConditionInput
+  distributedByAdvisor: FilterStringWithConditionInput
+  distributorNetwork: FilterStringWithConditionInput
+  entryFee: FilterNullSafeNumberWithConditionInput
+  id: FilterNumberWithConditionInput
+  initialAmount: FilterNumberWithConditionInput
+  initialAmountWithoutOnTopFees: FilterNullSafeNumberWithConditionInput
+  initialCallPercentage: FilterNumberWithConditionInput
+  interestDate: FilterDateWithConditionInput
+  kycStatus: FilterSetKycStatusInput
+  lcbftLevel: FilterSetLcbftLevelInput
+  modalitiesStatus: FilterSetInvestmentModalitiesStatusInput
+  validationDate: FilterDateWithConditionInput
+  paymentDate: FilterDateWithConditionInput
+  paymentMethod: FilterSetPaymentMethodInput
+  premiumSubscriptionFee: FilterNullSafeNumberWithConditionInput
+  securitiesNumber: FilterNumberWithConditionInput
+  securityFeePattern: FilterStringWithConditionInput
+  securityOperationName: FilterStringWithConditionInput
+  signatureDate: FilterDateWithConditionInput
+  source: FilterSetInvestmentSourceInput
+  status: FilterSetTransactionStateInput
+  tmmExportedAt: FilterDateWithConditionInput
+  toAccountPhone: FilterStringWithConditionInput
+  toAccountLabel: FilterStringWithConditionInput
+  toAccountType: FilterSetAccountTypeInput
+  userEmail: FilterStringWithConditionInput
+  tmmStatus: FilterSetTransactionMoneyMovementStateInput
+}
+
+input FilterSetDocumentControlStatusInput {
+  values: [DocumentControlStatus]
+}
+
+input FilterNumberWithConditionInput {
+  conditions: [FilterNumberInput!]!
+  operator: FilterConditionOperator!
+}
+
+input FilterNumberInput {
+  filter: Float
+  secondFilter: Float
+  type: FilterNumberOperator!
+}
+
+enum FilterNumberOperator {
+  Equal
+  NotEqual
+  GreaterThan
+  LessThan
+  GreaterThanOrEqual
+  LessThanOrEqual
+  InRange
+  Blank
+  NotBlank
+}
+
+enum FilterConditionOperator {
+  And
+  Or
+}
+
+input FilterNullSafeNumberWithConditionInput {
+  conditions: [FilterNullSafeNumberInput!]!
+  operator: FilterConditionOperator!
+}
+
+input FilterNullSafeNumberInput {
+  filter: Float
+  secondFilter: Float
+  type: FilterNullSafeNumberOperator!
+}
+
+enum FilterNullSafeNumberOperator {
+  Equal
+  NotEqual
+  GreaterThan
+  LessThan
+  GreaterThanOrEqual
+  LessThanOrEqual
+  InRange
+  Blank
+  NotBlank
+}
+
+input FilterDateWithConditionInput {
+  conditions: [FilterDateInput!]!
+  operator: FilterConditionOperator!
+}
+
+input FilterDateInput {
+  filter: Date
+  secondFilter: Date
+  type: FilterDateOperator!
+}
+
+enum FilterDateOperator {
+  Equal
+  NotEqual
+  Before
+  After
+  InRange
+  Blank
+  NotBlank
+}
+
+input FilterSetDismembermentTypeInput {
+  values: [DismembermentType]
+}
+
+input FilterStringWithConditionInput {
+  conditions: [FilterStringInput!]!
+  operator: FilterConditionOperator!
+}
+
+input FilterStringInput {
+  filter: String
+  type: FilterStringOperator!
+}
+
+enum FilterStringOperator {
+  Contains
+  NotContains
+  Equal
+  NotEqual
+  StartsWith
+  EndsWith
+  Blank
+  NotBlank
+}
+
+input FilterSetKycStatusInput {
+  values: [KycStatus]
+}
+
+input FilterSetLcbftLevelInput {
+  values: [LcbftLevel]
+}
+
+input FilterSetInvestmentModalitiesStatusInput {
+  values: [InvestmentModalitiesStatus]
+}
+
+input FilterSetPaymentMethodInput {
+  values: [PaymentMethod]
+}
+
+input FilterSetInvestmentSourceInput {
+  values: [InvestmentSource]
+}
+
+input FilterSetTransactionStateInput {
+  values: [TransactionState]
+}
+
+input FilterSetAccountTypeInput {
+  values: [AccountType]
+}
+
+input FilterSetTransactionMoneyMovementStateInput {
+  values: [TransactionMoneyMovementState]
+}
+
+"A connection to a list of items."
+type InvestmentConnection {
+  totalCount: Int!
+
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+
+  "Information to aid in pagination."
+  edges: [InvestmentEdge]
+}
+
+"An edge in a connection."
+type InvestmentEdge {
+  "The item at the end of the edge."
+  node: Investment
+
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+input PendingDismemberedInvestmentFiltersInput {
+  dismembermentTypes: [DismembermentType]
+  dismembermentType: DismembermentType @deprecated(reason: "Use dismembermentTypes instead")
+  dismembermentDurationInYears: Int
+}
+
+"A Financial Vehicle"
+type Vehicle implements Company {
+  id: ID!
+  corporateAccount: CompanyAccount!
+  securities: [Security]
+  risk: Int
+  logo: Document
+  companyDocuments: [CompanyDocument]
+  communications: [Communication]
+  portfolio(
+    "The portfolio will be rendered as the state it was at this date"
+    visualizationDate: Date
+  ): Portfolio
+  historicalInvestmentSumAmounts: HistoricalMonetaryValues!
+  historicalInvestmentCalledSumAmounts: HistoricalMonetaryValues!
+  historicalInvestedSumAmounts: HistoricalMonetaryValues!
+  historicalDistributedSumAmounts: HistoricalMonetaryValues!
+  historicalCededSumAmounts: HistoricalMonetaryValues!
+  historicalAssetValuationAmounts: HistoricalMonetaryValues!
+  historicalManagementFeesAmounts: HistoricalMonetaryValues!
+  availableAmountToInvest: Amount!
+  historicalIrrValues: HistoricalValues!
+  historicalDpiValues: HistoricalValues!
+  historicalRvpiValues: HistoricalValues!
+  historicalTvpiValues: HistoricalValues!
+  netIrr: Float
+  multiple: Float
+  timeline: [CompanyActivity]!
+  accountingRecords: [AccountingRecord]!
+  createdAt: Date
+  initialCapitalCallDate(
+    "Data will be computed as the state it was at this date"
+    visualizationDate: Date
+  ): DateTime
+  firstInvestmentDate(
+    "Data will be computed as the state it was at this date"
+    visualizationDate: Date
+  ): DateTime
+}
+
+"An historical representation of a monetary value"
+type HistoricalMonetaryValues {
+  currentValue: Amount!
+  currentCumulatedValue: Amount
+  mostRecentDate: Date
+  values: [PointInTimeMoneyValue]!
+}
+
+type PointInTimeMoneyValue {
+  date: Date!
+  value: Amount!
+  cumulatedValue: Amount
+  previousValue: PointInTimeMoneyValue
+  nextValue: PointInTimeMoneyValue
+  customLabel: String
+}
+
+"An historical representation of a value"
+type HistoricalValues {
+  currentValue: Float!
+  currentCumulatedValue: Float
+  mostRecentDate: Date
+  values: [PointInTimeValue]!
+}
+
+type PointInTimeValue {
+  date: Date!
+  value: Float!
+  cumulatedValue: Float
+  previousValue: PointInTimeValue
+  nextValue: PointInTimeValue
+  customLabel: String
+}
+
+type CompanyActivity {
+  title: String!
+  date: Date!
+  amount: Amount
+  from: String
+  to: String
+}
+
+type AccountingRecord {
+  id: ID!
+  type: AccountingRecordTypeDetailed!
+  date: Date!
+  description: String!
+  amount: Int!
+  vehicle: Vehicle!
+}
+
+"A Financial Target"
+type Target implements Company {
+  id: ID!
+  corporateAccount: CompanyAccount!
+  securities: [Security]
+  risk: Int
+  logo: Document
+  companyDocuments: [CompanyDocument]
+  communications: [Communication]
+  activity: String
+  pmsSector: PmsSector
+  localization: String
+  contactEmail: String
+  contactPhone: String
+  contactJobPosition: String
+  investmentOfficer: String
+  firstInvestmentDate(
+    "Filter transactions upon specific vehicle"
+    vehicleId: ID!
+
+    "Data will be computed as the state it was at this date"
+    visualizationDate: Date
+  ): DateTime
+  status(
+    "Filter transactions upon specific vehicle"
+    vehicleId: ID!
+
+    "Data will be computed as the state it was at this date"
+    visualizationDate: Date
+  ): TargetStatus
+  securityRepartition(
+    "Filter transactions upon specific vehicle"
+    vehicleId: ID!
+
+    "The portfolio will be rendered as the state it was at this date"
+    visualizationDate: Date
+  ): Array
+  assetSummary(
+    "Filter transactions upon specific vehicle"
+    vehicleId: ID!
+
+    "Asset summary will be rendered as the state it was at this date"
+    visualizationDate: Date
+  ): Portfolio
+  timeline(
+    "Filter transactions upon specific vehicle"
+    vehicleId: ID!
+  ): [CompanyActivity]!
+  historicalAssetValuationAmounts(
+    "Filter transactions upon specific vehicle"
+    vehicleId: ID!
+  ): HistoricalMonetaryValues!
+  historicalInvestedSumAmounts(
+    "Filter transactions upon specific vehicle"
+    vehicleId: ID!
+  ): HistoricalMonetaryValues!
+  historicalCededSumAmounts(
+    "Filter transactions upon specific vehicle"
+    vehicleId: ID!
+  ): HistoricalMonetaryValues!
+  historicalIrrValues(
+    "Filter transactions upon specific vehicle"
+    vehicleId: ID!
+  ): HistoricalValues!
+  historicalUnrealizedGainValues(
+    "Filter transactions upon specific vehicle"
+    vehicleId: ID!
+  ): HistoricalMonetaryValues!
+}
+
+type FormQuestionWithAnswer {
+  id: ID!
+  formDefinition: Array!
+  label: String
+  tooltip: String
+  placeholder: String
+  totalLabel: String
+  helpText: String
+  append: String
+  content: String
+
+  "Define if the field is applicable upon current step data. Syntax in twig"
+  applicable: String!
+
+  validations: Array!
+  sortIndex: Int!
+  technicalCode: String!
+  configurableFormStep: ConfigurableFormStep!
+  answer: Any
+  width: Int
+  configurableFormQuestionEntityProperties: [ConfigurableFormQuestionEntityProperty]!
+}
+
+type PublicNotificationType {
+  id: NotificationTypeId! @deprecated(reason: "Use notificationTypeId instead")
+  notificationTypeStatus: NotificationTypeStatusDetailed!
+  notificationTypeId: NotificationTypeIdDetailed!
+  enableSendingByDefault: Boolean!
+}
+
+enum NotificationTypeId {
+  ACCESSCONTROL_DISALLOWED
+  AsynchronousOperationCompleted
+  CAPITAL_CALL_FUNDS_RECEIVED
+  CESSION_TRANSACTION_VALIDATED
+  DISTRIBUTION_TRANSACTION_VALIDATED
+  EFFECTIVE_DATE_ADDED
+  ExportDataTable
+  FORGOTTEN_PASSWORD
+  GeneralAssemblyConvening
+  INVESTMENT_TRANSACTION_VALIDATED
+  InvestmentInterestExpression
+  InvestmentModalitiesCompleted
+  InvestmentModalitiesToComplete
+  InvestmentModalitiesRefused
+  InvestmentModalitiesValidated
+  InvestmentPaymentInformation
+  InvestmentPaymentStateChanged
+  InvoicePaymentDateAdded
+  ISSUED_PAYMENT
+  KYC_COMPLETED
+  KYC_REFUSED
+  KYC_VALIDATED
+  KycCompletionInvitation
+  KycExpired
+  KydRefused
+  KydValidated
+  LoginLink
+  NEW_CAPITAL_CALL
+  NEW_COMMUNICATION
+  NewDocumentAvailable
+  NewInvoiceRetrocessions
+  NewInvestmentInitiated
+  New_Kyc_Alert_Level1
+  New_Kyc_Alert_Level2
+  NewPayment
+  NewWithdrawalRequest
+  REGISTER
+  REGISTER_VALIDATION
+  RESET_KYC_ALERT
+  SepaFileGeneration
+  SUBSCRIPTION_COMPLETED
+  SUBSCRIPTION_ENTIRELY_SIGNED
+  SUBSCRIPTION_SIGNED
+  SubscriptionPackSignatureInvitation
+  SubscriptionValidated
+  TransferTransactionValidatedCreditor
+  TransferTransactionValidatedDebtor
+  KycToReview
+  KycReviewApproved
+  KycReviewRefused
+}
+
+type NotificationTypeStatusDetailed {
+  code: NotificationTypeStatus!
+  label: String!
+}
+
+enum NotificationTypeStatus {
+  Enabled
+  Disabled
+}
+
+type NotificationTypeIdDetailed {
+  code: NotificationTypeId!
+  label: String!
+}
+
+type NotificationType {
+  id: NotificationTypeId! @deprecated(reason: "Use notificationTypeId instead")
+  notificationTypeId: NotificationTypeIdDetailed!
+  category: NotificationTypeCategoryDetailed!
+  label: String
+  localizedLabel: [LocalizedString]
+  status: NotificationTypeStatus! @deprecated(reason: "Use notificationTypeStatus instead")
+  notificationTypeStatus: NotificationTypeStatusDetailed!
+  templateId: Int
+  subject: String
+  localizedSubject: [LocalizedString]
+  content: String
+  localizedContent: [LocalizedString]
+  emailsInCopy: [String]
+  forInvestors: Boolean!
+  forDistributedCustomers: Boolean!
+  forDistributorAdvisors: Boolean!
+  forDistributors: Boolean!
+  forDistributorNetworks: Boolean!
+  enableSendingByDefault: Boolean!
+  allowDefaultNotificationSetup: Boolean!
+}
+
+type NotificationTypeCategoryDetailed {
+  code: NotificationTypeCategory!
+  label: String!
+}
+
+enum NotificationTypeCategory {
+  Admin
+  Distributor
+  Investor
+  User
+}
+
+"A connection to a list of items."
+type TransactionFeeConnection {
+  totalCount: Int!
+
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+
+  "Information to aid in pagination."
+  edges: [TransactionFeeEdge]
+}
+
+"An edge in a connection."
+type TransactionFeeEdge {
+  "The item at the end of the edge."
+  node: TransactionFee
+
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+"A connection to a list of items."
+type InvoiceConnection {
+  totalCount: Int!
+
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+
+  "Information to aid in pagination."
+  edges: [InvoiceEdge]
+}
+
+"An edge in a connection."
+type InvoiceEdge {
+  "The item at the end of the edge."
+  node: Invoice
+
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+"A connection to a list of items."
+type EntityPropertyConnection {
+  totalCount: Int!
+
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+
+  "Information to aid in pagination."
+  edges: [EntityPropertyEdge]
+}
+
+"An edge in a connection."
+type EntityPropertyEdge {
+  "The item at the end of the edge."
+  node: EntityProperty
+
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+type AccountDocumentType {
+  id: ID!
+  code: String!
+  label: String!
+}
+
+input DocumentTemplateFiltersInput {
+  documentTypes: [DocumentType]
+}
+
+"A referential choice"
+type ReferentialChoice {
+  id: ID!
+  label: String!
+  localizedLabel: [LocalizedString]!
+  technicalCode: String!
+  isDisplayed: Boolean!
+  sortIndex: Int!
+  entityProperty: EntityProperty!
+}
+
+type DataTable {
+  id: ID!
+  technicalCode: String!
+  name: String!
+  dataTableColumns: [DataTableColumn]
+  dataTableColumnsDisplayable: [DataTableColumn]
+  kpiValues(kpiQueryParameter: Array): [KpiValue]
+}
+
+type DataTableColumn {
+  id: ID!
+  technicalCode: String!
+  label: String!
+  type: String
+  displayable: Boolean!
+  sortIndex: Int
+  filterType: FilterType!
+  pinned: PinnedColumnPositionDetailed
+}
+
+enum FilterType {
+  NoFilter
+  Number
+  Date
+  String
+  Set
+}
+
+type PinnedColumnPositionDetailed {
+  code: PinnedColumnPosition!
+  label: String!
+}
+
+enum PinnedColumnPosition {
+  Left
+  Right
+}
+
+"A connection to a list of items."
+type PledgeConnection {
+  totalCount: Int!
+
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+
+  "Information to aid in pagination."
+  edges: [PledgeEdge]
+}
+
+"An edge in a connection."
+type PledgeEdge {
+  "The item at the end of the edge."
+  node: Pledge
+
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+type GeneralAssembly {
+  id: ID!
+  name: String!
+
+  "Will always be a Vehicle in current implementation"
+  company: Company!
+
+  quorum: Float!
+  quorumStrategy: QuorumCalculationStrategyDetailed!
+  conveningDate: Date
+  assemblyDate: DateTime
+  votesEndDate: DateTime
+  mandateDocumentTemplate: DocumentTemplate
+  conveningDocumentTemplate: DocumentTemplate
+  type: GeneralAssemblyTypeDetailed!
+  status: GeneralAssemblyStateDetailed!
+  conveningNumber: GeneralAssemblyConveningNumberDetailed!
+
+  "Documents related to the General Assembly"
+  documents: [Document]
+
+  generalAssemblyResolutions: [GeneralAssemblyResolution]
+  generalAssemblyResolutionsForUser(userId: ID!): [GeneralAssemblyResolution]
+}
+
+type GeneralAssemblyStateDetailed {
+  code: GeneralAssemblyState!
+  label: String!
+}
+
+enum GeneralAssemblyState {
+  InPreparation
+  AsynchronousConvening
+  AsynchronousAttendanceUpdate
+  Called
+  Opened
+  Closed
+}
+
+type GeneralAssemblyResolution {
+  id: ID!
+  name: String!
+  number: Int!
+  description: String!
+  generalAssembly: GeneralAssembly!
+  majority: Float!
+  type: GeneralAssemblyResolutionTypeDetailed!
+  outcome: GeneralAssemblyResolutionOutcome!
+  votes(
+    resultsPerPage: Int
+    page: Int = 1
+
+    "Term to search in account label"
+    search: String
+
+    filter: VoteFilterInput
+  ): GeneralAssemblyVoteConnection
+  votesByUser(userId: ID!): [GeneralAssemblyVote]
+}
+
+type GeneralAssemblyResolutionOutcome {
+  resolutionVotesCount: GeneralAssemblyResolutionVotesCount!
+  status: GeneralAssemblyResolutionStatusDetailed!
+}
+
+type GeneralAssemblyResolutionVotesCount {
+  forCount: Float!
+  forPercentage: Float!
+  againstCount: Float!
+  againstPercentage: Float!
+  abstentionCount: Float!
+  totalVotesCount: Float!
+}
+
+input VoteFilterInput {
+  response: GeneralAssemblyVoteResponse
+}
+
+"A connection to a list of items."
+type GeneralAssemblyVoteConnection {
+  totalCount: Int!
+
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+
+  "Information to aid in pagination."
+  edges: [GeneralAssemblyVoteEdge]
+}
+
+"An edge in a connection."
+type GeneralAssemblyVoteEdge {
+  "The item at the end of the edge."
+  node: GeneralAssemblyVote
+
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+type GeneralAssemblyVote {
+  id: ID!
+  generalAssemblyResolution: GeneralAssemblyResolution!
+  generalAssemblyAccount: GeneralAssemblyAccount!
+  response: GeneralAssemblyVoteResponseDetailed
+  votedAt: DateTime
+}
+
+type GeneralAssemblyAccount {
+  id: ID!
+  account: Account!
+  generalAssembly: GeneralAssembly!
+  attendance: GeneralAssemblyAttendanceDetailed!
+  securitiesNumber: Float!
+  ballotDocument: Document
+  dismembermentType: DismembermentTypeDetailed
+}
+
+type GeneralAssemblyAccountDocumentGenerated {
+  vehicle: Vehicle!
+  documentGenerated: DocumentGenerated!
+  operations: [Operation!]
+}
+
+"A connection to a list of items."
+type GeneralAssemblyAccountConnection {
+  totalCount: Int!
+
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+
+  "Information to aid in pagination."
+  edges: [GeneralAssemblyAccountEdge]
+}
+
+"An edge in a connection."
+type GeneralAssemblyAccountEdge {
+  "The item at the end of the edge."
+  node: GeneralAssemblyAccount
+
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+"A User's document"
+type UserDocument {
+  user: User!
+  document: Document!
+  account: Account
+  operation: Operation
+}
+
+"A Account's transaction document"
+type AccountTransactionDocument {
+  document: Document!
+  account: Account!
+  operation: Operation
+}
+
+"A custom export"
+type CustomExport {
+  id: ID!
+  name: String!
+  description: String
+  hasQuery: Boolean!
+  exports: [Export]
+  lastExport: Export
+}
+
+"An export"
+type Export {
+  id: ID!
+  author: User
+  authorName: String
+  name: String
+  exportFileFormat: ExportFileFormat
+  target: String
+  generationDate: DateTime
+  expirationDate: DateTime
+  lastDownloadDate: DateTime
+  lastDownloadBy: User
+  asynchronousOperation: AsynchronousOperation
+  document: Document
+}
+
+enum ExportFileFormat {
+  Excel
+  Csv
+  Xml
+}
+
+"A connection to a list of items."
+type DocumentBatchConnection {
+  totalCount: Int!
+
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+
+  "Information to aid in pagination."
+  edges: [DocumentBatchEdge]
+}
+
+"An edge in a connection."
+type DocumentBatchEdge {
+  "The item at the end of the edge."
+  node: DocumentBatch
+
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+"A batch of documents"
+type DocumentBatch {
+  id: ID!
+  name: String!
+  type: DocumentTypeDetailed!
+  issueDate: DateTime!
+  status: DocumentBatchStatusDetailed!
+  documentTemplate: DocumentTemplate
+  startPeriod: Date!
+  endPeriod: Date!
+  target: DocumentBatchTargetDetailed!
+  documentBatchIncludedSegments: [DocumentBatchIncludedSegment]
+  recipientIds: [String]
+  documents: [Document]
+  generationMethod: DocumentBatchGenerationMethodDetailed!
+  ongoingAsynchronousOperationVisibilityToggle: Boolean!
+}
+
+type DocumentBatchStatusDetailed {
+  code: DocumentBatchStatus!
+  label: String!
+}
+
+enum DocumentBatchStatus {
+  Pending
+  Processing
+  Processed
+}
+
+"An inclusion segment of a document batch"
+type DocumentBatchIncludedSegment {
+  id: ID!
+  documentBatch: DocumentBatch
+  segment: Segment
+}
+
+input DmsDocumentFilterInput {
+  documentId: FilterNumberWithConditionInput
+  name: FilterStringWithConditionInput
+  category: FilterSetDmsCategoryInput
+  type: FilterSetDocumentContextInput
+  issuedAt: FilterDateWithConditionInput
+  issuerCompanyId: FilterNumberWithConditionInput
+  issuerCompanyLabel: FilterStringWithConditionInput
+  accountId: FilterNumberWithConditionInput
+  accountLabel: FilterStringWithConditionInput
+  operationName: FilterStringWithConditionInput
+  visibleByInvestor: FilterBooleanInput
+}
+
+input FilterSetDmsCategoryInput {
+  values: [DmsDocumentCategory]
+}
+
+input FilterSetDocumentContextInput {
+  values: [DocumentContext]
+}
+
+enum DocumentContext {
+  Account
+  AccountBankAccount
+  AccountDocument
+  CommunicationDocument
+  CorporateInfoDocument
+  DocumentTemplate
+  InvoiceRetrocession
+  OperationBankAccount
+  OperationDocument
+  OperationThumbnail
+  PersonalInfoDocument
+  TransactionDocument
+  TransactionMoneyMovementDocument
+  CompanyLogo
+  CompanyUploadedDocument
+  DistributorDocument
+  Export
+  FundDici
+  FundFiscalnote
+  FundRegulation
+  GeneralAssemblyConvening
+  GeneralAssemblyUploadedDocument
+  PledgeAgreement
+  PledgeReleaseAgreement
+  VialinkReport
+  AccountCustomPropertyDocument
+  BankAccountCustomPropertyDocument
+  CorporateInfoCustomPropertyDocument
+  DistributorCustomPropertyDocument
+  InvestmentCustomPropertyDocument
+  InvestorInfoCustomPropertyDocument
+  PersonalInfoCustomPropertyDocument
+  ShareholderCustomPropertyDocument
+}
+
+input FilterBooleanInput {
+  filter: Boolean
+}
+
+"A connection to a list of items."
+type DmsDocumentConnection {
+  totalCount: Int!
+
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+
+  "Information to aid in pagination."
+  edges: [DmsDocumentEdge]
+}
+
+"An edge in a connection."
+type DmsDocumentEdge {
+  "The item at the end of the edge."
+  node: DmsDocument
+
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+"A document in the DMS"
+type DmsDocument {
+  id: ID!
+  documentId: ID!
+  name: String!
+  category: DmsDocumentCategoryDetailed!
+  type: DocumentContext!
+  issuedAt: DateTime!
+  issuerCompanyId: ID
+  issuerCompanyLabel: String
+  accountId: ID
+  accountLabel: String
+  operationName: String
+  visibleByInvestor: Boolean!
+  visibilityParentObjectName: EntityName
+  visibilityParentObjectId: ID
+}
+
+"A connection to a list of items."
+type AccountDocumentConnection {
+  totalCount: Int!
+
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+
+  "Information to aid in pagination."
+  edges: [AccountDocumentEdge]
+}
+
+"An edge in a connection."
+type AccountDocumentEdge {
+  "The item at the end of the edge."
+  node: AccountDocument
+
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+"The mutation API"
+type RootMutation {
+  CloseSecurityOperation(id: ID!): SecurityOperation
+  OpenSecurityOperation(id: ID!): SecurityOperation
+  CreateSecurityOperationCession(name: String!, securityId: ID!, endDate: Date!, percentageOfSecurities: Float, securityOperationDocuments: [SecurityOperationDocumentInput]!, allotment: SecurityOperationAllotmentInput, repartitions: [RepartitionDistributionInput!]!, investorsSelectionStrategy: InvestorsSelectionStrategy!): SecurityOperationCession
+  UpdateSecurityOperationCession(id: ID!, name: String!, date: Date!, bankWireReference: String!): SecurityOperationCession
+  UpdateSecurityOperationInvestmentDocuments(id: ID!, securityOperationDocuments: [SecurityOperationDocumentInput]!): SecurityOperationInvestment
+  UpdateSecurityOperationInvestmentDocumentsToGenerate(id: ID!, securityOperationTriggeredDocuments: [SecurityOperationDocumentInput]): SecurityOperationInvestment
+  AddInvestorToSecurityOperationCession(securityOperationCessionId: ID!, accountId: ID!, securitiesNumber: Float!, repartitions: [RepartitionDistributionInput!]!, dryRun: Boolean!, filters: TransactionFiltersInput): [Cession]
+  AddInvestorToSecurityOperationCessionWithdrawalRequest(accountSecurityContractId: ID!, securitiesNumber: Float!, securityId: ID!, filters: TransactionFiltersInput): Cession
+  CreateSecurityOperationDistribution(name: String!, securityId: ID!, endDate: Date!, securityOperationDocuments: [SecurityOperationDocumentInput]!, allotment: SecurityOperationAllotmentInput!, repartitions: [RepartitionDistributionInput!]!, investorsSelectionStrategy: InvestorsSelectionStrategy!): SecurityOperationDistribution
+  UpdateSecurityOperationDistribution(id: ID!, name: String!, date: Date!, bankWireReference: String!): SecurityOperationDistribution
+  AddInvestorToSecurityOperationDistribution(securityOperationDistributionId: ID!, accountId: ID!, repartitions: [RepartitionDistributionInput!]!, dryRun: Boolean!, filters: TransactionFiltersInput): [Distribution]
+  CreateSecurityOperationCapitalCall(name: String!, securityId: ID!, date: Date!, securityOperationDocuments: [SecurityOperationDocumentInput]!, amountToCall: Amount!, percentageToCall: Float!, investorsSelectionStrategy: InvestorsSelectionStrategy!, withEmail: Boolean!): SecurityOperationCapitalCall
+  UpdateSecurityOperationCapitalCall(id: ID!, name: String!, date: Date!): SecurityOperationCapitalCall
+  AddInvestorToSecurityOperationCapitalCall(securityOperationCapitalCallId: ID!, accountId: ID!, amountToCall: Amount!, documentGeneration: DocumentGenerationInput!, withEmail: Boolean!): [CapitalCall]
+  NotifyIssuedPayment(investmentId: ID!): Boolean!
+  SetInvestmentEffectiveDate(investmentId: ID!, effectiveDate: Date!, documentGeneration: DocumentGenerationInput, withEmail: Boolean!): Investment
+  ActivateUser(userId: ID!, withEmail: Boolean!): User
+  DeactivateUser(userId: ID!, withEmail: Boolean!, unactiveComment: String!): User
+  UpdateUserEmailsInCopy(userId: ID!, emailsInCopy: [String]!): User
+  UpdateUserInfosAndPermissions(userId: ID!, roles: [Role], segments: [ID], persona: Persona, firstName: String, lastName: String, mobile: String, email: String, distributorAdvisorId: ID, distributorNetworkId: ID): User
+  SetAccountKycStatus(accountId: ID!, kycStatus: KycStatus!, withEmail: Boolean!, kycRefusedComment: String): Account
+  SendEmailInvestmentModalitiesToComplete(investmentId: ID!): Boolean!
+  SetInvestmentModalitiesStatus(investmentId: ID!, modalitiesStatus: InvestmentModalitiesStatus!, withEmail: Boolean!, refusedComment: String): Investment
+  SetInvestmentPaymentDate(investmentId: ID!, paymentDate: Date!, documentGeneration: DocumentGenerationInput, withEmail: Boolean!): Investment @deprecated(reason: "Use `UpdateInvestmentPaymentState`")
+  SetDistributionPaymentDate(moneyMovementId: ID!, paymentDate: Date!, documentGeneration: DocumentGenerationInput!, withEmail: Boolean!): TransactionMoneyMovement
+  SetDistributionPaymentDateForAllDistributions(securityOperationId: ID!, paymentDate: Date!, documentGeneration: DocumentGenerationInput!, withEmail: Boolean!, search: String, filter: TransactionMoneyMovementFiltersInput): SecurityOperation
+  SetCessionPaymentDate(moneyMovementId: ID!, paymentDate: Date!, endEffectiveDate: Date!, documentGeneration: DocumentGenerationInput!, withEmail: Boolean!): TransactionMoneyMovement
+  SetCapitalCallPaymentDate(moneyMovementId: ID!, paymentDate: Date!, withEmail: Boolean!): TransactionMoneyMovement
+  SetTransferPaymentDate(moneyMovementId: ID!, paymentDate: Date!, endEffectiveDate: Date!, documentGeneration: DocumentGenerationInput!, withEmailCreditorTransfer: Boolean!, withEmailDebtorTransfer: Boolean!): TransactionMoneyMovement
+  SetDismembermentDate(moneyMovementId: ID!, date: Date!): TransactionMoneyMovement
+  CreateFinancialVehicle(companyCorporateAccount: CompanyCorporateAccountInput!): Vehicle
+  CreateFinancialTarget(companyCorporateAccount: CompanyCorporateAccountInput!): Target
+  UpdateFinancialTarget(id: ID!, corporateName: String, targetInfo: TargetInfoInput!, logo: UploadDocument): Target
+  AddStake(securityId: ID!, stakerName: String!, securitiesNumber: Float!): Security
+  UpdateStake(id: ID!, stakerName: String!, securitiesNumber: Float!): Security
+  DeleteStake(id: ID!): ItemDeletedResponse!
+  CreateOperation(name: String!, companyId: ID!, operationType: OperationType!, targetAmount: Amount!, issuedSecurities: Int!, taxation: [String]!, indicators: [OperationFinancingInfoIndicatorInput]!, paymentMethods: [PaymentMethod]!): Operation!
+  UpdateOperation(id: ID!, name: String, localizedDescription: [LocalizedStringInput], descriptionState: OperationDescriptionState, localizedIndicators: [LocalizedOperationFinancingInfoIndicatorInput], targetAmount: Amount, issuedSecurities: Int, taxations: [String], paymentMethods: [PaymentMethod], kycStatusForSignature: KycStatus, openedToCosubscription: Boolean, subscriptionSignedByThirdParty: Boolean, subscriptionSignedBySecondThirdParty: Boolean, bankAccount: BankAccountInput, bankWireReference: String, urmReference: String, checkOrder: String, subscriptionSignerThirdPartyFirstName: String, subscriptionSignerThirdPartyLastName: String, subscriptionSignerThirdPartyEmail: String, subscriptionSignerThirdPartyMobile: String, subscriptionSignerSecondThirdPartyFirstName: String, subscriptionSignerSecondThirdPartyLastName: String, subscriptionSignerSecondThirdPartyEmail: String, subscriptionSignerSecondThirdPartyMobile: String, subscriptionFormId: ID, needsValidation: Boolean, subscribedAtUnknownNav: Boolean, includedSegmentsIds: [ID!], excludedSegmentsIds: [ID!], thumbnail: UploadDocument, preferredSignatureMethod: SignatureMethod, alternativeSignatureMethods: [SignatureMethod]): Operation!
+  UploadOperationDocument(operationId: ID!, document: UploadDocument!): Operation
+  DeleteOperationDocument(operationDocumentId: ID!): ItemDeletedResponse
+  OpenPreSubscription(id: ID!): Operation!
+  OpenOperation(id: ID!): Operation!
+  CloseOperation(id: ID!): Operation!
+  CreateSecurityFeePatternBase(securityId: ID!, name: String!): SecurityFeePatternBase
+  CreateSecurityEntryFee(securityFeePatternId: ID!, localizedName: [LocalizedStringInput]!, feeAtePercentage: Float!, feeVatPercentage: Float!, retrocessionAtePercentage: Float, calculationType: FeeCalculationType!): SecurityFeeEntry
+  UpdateSecurityEntryFee(securityFeeId: ID!, localizedName: [LocalizedStringInput]!, feeAtePercentage: Float!, feeVatPercentage: Float!, retrocessionAtePercentage: Float, calculationType: FeeCalculationType!): SecurityFeeEntry
+  CreateSecurityManagementFee(securityFeePatternId: ID!, localizedName: [LocalizedStringInput]!, feeAtePercentage: Float!, feeVatPercentage: Float!, retrocessionAtePercentage: Float, calculationBasis: FeeCalculationBasis!, calculationPeriodicity: FeeCalculationPeriodicity!): SecurityFeeManagement
+  UpdateSecurityManagementFee(securityFeeId: ID!, localizedName: [LocalizedStringInput]!, feeAtePercentage: Float!, feeVatPercentage: Float!, retrocessionAtePercentage: Float, calculationBasis: FeeCalculationBasis!, calculationPeriodicity: FeeCalculationPeriodicity!): SecurityFeeManagement
+  CreateSecurityConsultancyFee(securityFeePatternId: ID!, localizedName: [LocalizedStringInput]!, maximumFeeAtiPercentage: Float!, calculationType: FeeCalculationType!): SecurityFeeConsultancy
+  UpdateSecurityConsultancyFee(securityFeeId: ID!, localizedName: [LocalizedStringInput]!, maximumFeeAtiPercentage: Float!, calculationType: FeeCalculationType!): SecurityFeeConsultancy
+  CreateSecurityPremiumSubscriptionFee(securityFeePatternId: ID!, localizedName: [LocalizedStringInput]!, feeVatPercentage: Float!, feeAtePercentage: Float!, startDate: Date, calculationMethod: FeeCalculationMethod!, calculationType: FeeCalculationType!, retrocessionAtePercentage: Float): SecurityFeePremiumSubscription
+  UpdateSecurityPremiumSubscriptionFee(securityFeeId: ID!, localizedName: [LocalizedStringInput]!, feeVatPercentage: Float!, feeAtePercentage: Float!, startDate: Date, calculationMethod: FeeCalculationMethod!, calculationType: FeeCalculationType!, retrocessionAtePercentage: Float): SecurityFeePremiumSubscription
+  UpdateSubscription(investmentId: ID!, securityOperationInvestmentId: ID!, amount: Amount!, feePatternId: ID): Investment!
+  UpdateSubscriptionFeePattern(investmentId: ID!, newFeePatternId: ID): Investment!
+  UpdateTransactionFee(transactionFeeId: ID!, amountAte: Amount!, amountAti: Amount!, retrocessionAmountAte: Amount, retrocessionAmountAti: Amount): Investment!
+  ResumeInvestment(investmentId: ID!): Investment!
+  DeleteSecurityFee(securityFeeId: ID!): ItemDeletedResponse!
+  ValidateDocumentControl(id: ID!): DocumentControl!
+  RefuseDocumentControl(id: ID!): DocumentControl!
+  SetExpirationDocumentControl(id: ID!, expiresOn: DateTime!): DocumentControl!
+  UpdateComplianceControl(
+    complianceControlId: ID!
+    comment: String!
+    withMail: Boolean
+
+    "\"reset\" or \"escalate\" or null for just comment"
+    action: ComplianceControlAction
+  ): ComplianceControl!
+  CreateSecurity(securityType: SecurityType!, companyId: ID!, name: String!, nominalValue: PreciseAmount!, distributionPeriodicity: DistributionPeriodicity!, numberOfDecimals: Int!, obligationSpecific: ObligationSpecificInput, convertibleObligationSpecific: ConvertibleObligationSpecificInput, scpiShareSpecific: ScpiShareSpecificInput, fundShareSpecific: FundShareSpecificInput): Security!
+  CreateCommunication(title: String!, issuerId: ID!, communicationType: CommunicationType!, period: Date!): Communication!
+  CreateSecurityOperationInvestment(operationId: ID!, securityId: ID!, priceBySecurity: PreciseAmount!, capitalCallPercentage: Float!, name: String!, issuedSecurities: Int!, initialMinimalSubscriptionSecurityCount: Float!, nextMinimalSubscriptionSecurityCount: Float!, securityOperationInvestmentType: SecurityOperationInvestmentType): SecurityOperationInvestment!
+  CreateSecurityOperationTransfer(name: String!, date: Date!, fromAccountId: ID!, securityOperationDocuments: [SecurityOperationDocumentInput]!): SecurityOperationTransfer!
+  CreateSecurityOperationDismemberment(name: String!, accountId: ID!, date: Date!): SecurityOperationDismemberment!
+  UpdateSecurityOperationTransfer(id: ID!, name: String!, date: Date!, securityOperationDocuments: [SecurityOperationDocumentInput]): SecurityOperationTransfer
+  UpdateSecurityOperationDismemberment(securityOperationId: ID!, name: String!, date: Date!): SecurityOperationDismemberment!
+  AddInvestorToSecurityOperationTransfer(securityOperationTransferId: ID!, toAccountId: ID!, securityId: ID!, securitiesNumber: Float!, amount: Amount!, dismembermentType: DismembermentType): Transfer
+  AddSecuritiesToSecurityOperationDismemberment(securityOperationDismembermentId: ID!, securityId: ID!, securitiesNumber: Float!, dismembermentDurationInYears: Int): Dismemberment!
+  CreateAccountingRecord(type: AccountingRecordType!, date: Date!, description: String!, amount: Amount!, vehicleId: ID!): AccountingRecord
+  UpdateAccountingRecord(date: Date!, description: String!, amount: Amount!, accountingRecordId: ID!): AccountingRecord
+  CreateIndividualAccount(userId: ID!): IndividualAccount!
+  CreateCorporateAccount(userId: ID!, corporateName: String!, representative: CompanyCorporateAccountRepresentativeInput!): CorporateAccount!
+  CreateJointAccount(userId: ID!, secondaryFirstName: String!, secondaryLastName: String!, secondaryEmail: String!, secondaryMobile: String!): JointAccount!
+  CreateAccountComment(content: String!, accountId: ID!): AccountComment!
+  UpdateAccountComment(content: String!, id: ID!): AccountComment!
+  DeleteAccountComment(id: ID!): ItemDeletedResponse
+  CreateDismembermentKey(scpiShareId: ID!, durationInYears: Int!, usufructValuationDiscount: Float!, displayOnInitialSubscription: Boolean!): ScpiShareDismembermentKey!
+  UpdateDismembermentKey(scpiShareDismembermentKeyId: ID!, durationInYears: Int!, usufructValuationDiscount: Float!, displayOnInitialSubscription: Boolean!): ScpiShareDismembermentKey!
+  CreateInvestment(operationId: ID!, securityOperationInvestmentId: ID, securityFeePatternId: ID, accountId: ID!, amount: Amount!, taxationType: TaxationType, taxationAccountNumber: String, consultancyFeesPercentage: Float, source: InvestmentSource, withEmail: Boolean): Investment!
+  UpdateInvestmentAccount(investmentId: ID!, accountId: ID!): Investment!
+  UpdateInvestmentAmount(investmentId: ID!, amount: Amount!, consultancyFeesPercentage: Float): Investment!
+  UpdateInvestmentPaymentState(investmentId: ID!, paymentDate: Date, transactionMoneyMovementState: TransactionMoneyMovementState!, documentGeneration: DocumentGenerationInput, withEmail: Boolean!): Investment
+  ValidateSubscription(investmentId: ID!, validationDate: Date!, documentGeneration: DocumentGenerationInput, withEmail: Boolean!): Investment
+  AnswerKyc(accountId: ID!, investmentId: ID, stepTechnicalCode: String, formAnswers: [FormAnswerInput]!): Account
+
+  "Send KYC documents to electronic signature provider. You get in return the URL to redirect the user to for signing the documents"
+  SendKycDocumentToSignatureProvider(accountId: ID!, formStep: String!, redirectTo: String!): String
+
+  RegenerateCapitalCallDocument(moneyMovementId: ID!, documentGeneration: DocumentGenerationInput!, withEmail: Boolean!): TransactionMoneyMovement!
+  UpdateNotificationType(id: NotificationTypeId!, label: String!, status: NotificationTypeStatus!, enableSendingByDefault: Boolean!, localizedSubject: [LocalizedStringInput]!, localizedContent: [LocalizedStringInput]!, emailsInCopy: [String]!, forInvestors: Boolean!, forDistributedCustomers: Boolean!, forDistributorAdvisors: Boolean!, forDistributors: Boolean!, forDistributorNetworks: Boolean!): NotificationType
+  SendEmailAccess(userId: ID!): User
+  CreateRetrocessionInvoice(issueDate: Date!, subject: String!, transactionFeeIds: [ID!], invoicerDistributorNetworkIfPossible: Boolean!, generateInvoice: AutomaticInvoiceInput, uploadedInvoice: ExistingInvoiceInput, withEmail: Boolean!): Invoice!
+  RegenerateInvoice(invoiceId: ID!, documentTemplateId: ID!, withEmail: Boolean!): Invoice!
+  CreateTargetInvestment(vehicleId: ID!, securityId: ID!, securitiesCount: Float!, amount: Amount!): Investment!
+  UpdateTargetInvestment(investmentId: ID!, securitiesCount: Float!, amount: Amount!): Investment!
+  AnswerInvestmentModalities(investmentId: ID!, stepTechnicalCode: String, formAnswers: [FormAnswerInput]!): Investment
+  SetSubscriptionStepKyc(investmentId: ID!): Investment
+  UploadCompanyDocument(companyId: ID!, uploadedDocuments: [UploadedDocumentInput]!): Company
+  AnalyzeKyc(accountId: ID!): Account
+  UpdateInvestorRelationship(accountId: ID!, specificRelationship: Boolean!, relationshipComment: String, relationshipRisk: LcbftLevel): Account
+  PublishCommunication(communicationId: ID!, withEmail: Boolean!): Communication
+  UnpublishCommunication(communicationId: ID!): Communication
+  UpdateCommunication(communicationId: ID!, issuerId: ID, period: Date, htmlContent: String, localizedHtmlContent: [LocalizedStringInput], title: String, localizedTitle: [LocalizedStringInput], communicationType: CommunicationType): Communication
+  UploadCommunicationDocument(communicationId: ID!, document: UploadDocument): Communication
+  DeleteCommunicationDocument(communicationDocumentId: ID!): ItemDeletedResponse
+  DeleteInvestment(investmentId: ID!): ItemDeletedResponse!
+  DeleteSubscriptionPack(investmentId: ID!): Investment
+  DeleteSubscriptionModalities(investmentId: ID!): Investment
+  SetInvestmentInterestDate(investmentId: ID!): Investment
+  AddSecurityValue(securityId: ID!, price: PreciseAmount!, date: Date!): Security
+  UpdateSecurityValue(securityValueId: ID!, price: PreciseAmount!, date: Date!): SecurityValue
+  CreateSegment(name: String!, description: String, type: SegmentType!): Segment
+  UpdateSegment(segmentId: ID!, name: String!, description: String): Segment
+  UpdateSegmentUsers(segmentId: ID!): Segment
+  DeleteSegment(segmentId: ID!): ItemDeletedResponse!
+  CreateUserSegment(userId: ID!, segmentId: ID!): UserSegment @deprecated(reason: "Use `AddUserToSegment`")
+  AddUserToSegment(userId: ID!, segmentId: ID!): UserSegment
+  DeleteUserFromSegment(userId: ID!, segmentId: ID!): ItemDeletedResponse!
+  UpdateDistributor(id: ID!, vatPercentage: Float!): Distributor
+  CreateSpecificFeePatternForDistributor(distributorId: ID!, securityFeePatternId: ID!, name: String): SecurityFeePattern!
+  ArchiveSecurityFeePatternBase(securityFeePatternId: ID!): Security
+  ArchiveSecurityFeePatternDistributor(securityFeePatternId: ID!): ItemDeletedResponse!
+  SetInvoicePaymentDate(invoiceId: ID!, date: Date!, withEmail: Boolean!): Invoice
+  ValidateBankAccount(bankAccountId: ID!): BankAccount!
+  RefuseBankAccount(bankAccountId: ID!): BankAccount!
+  UpdateBankAccount(bankAccountId: ID!, bankAccount: BankAccountInput!): BankAccount!
+  AddBankAccount(accountId: ID!, bankName: String, holderName: String, bankAccountType: BankAccountType!, iban: String!, bic: String!, rib: UploadDocument!): BankAccount!
+  DoExport(dataTableType: DataTableType!, exportFileFormat: ExportFileFormat!, params: Array): Boolean!
+  UpdateConfigurationHelpLinks(helpLinksAndPersona: [HelpLinkAndPersona]!): Configuration!
+  CreateEntityPropertyAddress(entityName: EntityName!, technicalCode: String!, name: String!, dataStrategyDefinition: Any): EntityPropertyAddress
+  UpdateEntityPropertyAddress(entityPropertyId: ID!, name: String!, dataStrategyDefinition: Any): EntityPropertyAddress
+  CreateEntityPropertyAmount(entityName: EntityName!, technicalCode: String!, name: String!, dataStrategyDefinition: Any): EntityPropertyAmount
+  UpdateEntityPropertyAmount(entityPropertyId: ID!, name: String!, dataStrategyDefinition: Any): EntityPropertyAmount
+  CreateEntityPropertyBoolean(entityName: EntityName!, technicalCode: String!, name: String!, dataStrategyDefinition: Any): EntityPropertyBoolean
+  UpdateEntityPropertyBoolean(entityPropertyId: ID!, name: String!, dataStrategyDefinition: Any): EntityPropertyBoolean
+  CreateEntityPropertyChoiceMultiple(entityName: EntityName!, technicalCode: String!, name: String!, dataStrategyDefinition: Any, displayType: EntityPropertyChoiceMultipleDisplayType, choiceType: EntityPropertyChoiceType, choiceDefinition: String, referentialName: EntityPropertyReferential): EntityPropertyChoiceMultiple
+  UpdateEntityPropertyChoiceMultiple(entityPropertyId: ID!, name: String!, dataStrategyDefinition: Any, displayType: EntityPropertyChoiceMultipleDisplayType, choiceType: EntityPropertyChoiceType, choiceDefinition: String, referentialName: EntityPropertyReferential): EntityPropertyChoiceMultiple
+  CreateEntityPropertyChoiceUnique(entityName: EntityName!, technicalCode: String!, name: String!, dataStrategyDefinition: Any, displayType: EntityPropertyChoiceUniqueDisplayType, choiceType: EntityPropertyChoiceType, choiceDefinition: String, referentialName: EntityPropertyReferential): EntityPropertyChoiceUnique
+  UpdateEntityPropertyChoiceUnique(entityPropertyId: ID!, name: String!, dataStrategyDefinition: Any, displayType: EntityPropertyChoiceUniqueDisplayType, choiceType: EntityPropertyChoiceType, choiceDefinition: String, referentialName: EntityPropertyReferential): EntityPropertyChoiceUnique
+  CreateEntityPropertyCityEnriched(entityName: EntityName!, technicalCode: String!, name: String!, dataStrategyDefinition: Any): EntityPropertyCityEnriched
+  UpdateEntityPropertyCityEnriched(entityPropertyId: ID!, name: String!, dataStrategyDefinition: Any): EntityPropertyCityEnriched
+  CreateEntityPropertyCityName(entityName: EntityName!, technicalCode: String!, name: String!, dataStrategyDefinition: Any): EntityPropertyCityName
+  UpdateEntityPropertyCityName(entityPropertyId: ID!, name: String!, dataStrategyDefinition: Any): EntityPropertyCityName
+  CreateEntityPropertyDate(entityName: EntityName!, technicalCode: String!, name: String!, dataStrategyDefinition: Any): EntityPropertyDate
+  UpdateEntityPropertyDate(entityPropertyId: ID!, name: String!, dataStrategyDefinition: Any): EntityPropertyDate
+  CreateEntityPropertyDocument(entityName: EntityName!, technicalCode: String!, name: String!, dataStrategyDefinition: Any, accountDocumentTypeId: ID, documentFormat: EntityPropertyDocumentFormatType!, documentType: DocumentType): EntityPropertyDocument
+  UpdateEntityPropertyDocument(entityPropertyId: ID!, name: String!, dataStrategyDefinition: Any, accountDocumentTypeId: ID, documentFormat: EntityPropertyDocumentFormatType!, documentType: DocumentType): EntityPropertyDocument
+  CreateEntityPropertyDocumentToSign(entityName: EntityName!, technicalCode: String!, name: String!, dataStrategyDefinition: Any, documentTemplateId: ID!): EntityPropertyDocumentToSign
+  UpdateEntityPropertyDocumentToSign(entityPropertyId: ID!, name: String!, dataStrategyDefinition: Any, documentTemplateId: ID!): EntityPropertyDocumentToSign
+  CreateEntityPropertyNumber(entityName: EntityName!, technicalCode: String!, name: String!, dataStrategyDefinition: Any, append: String, numPrecision: Int!): EntityPropertyNumber
+  UpdateEntityPropertyNumber(entityPropertyId: ID!, name: String!, dataStrategyDefinition: Any, append: String, numPrecision: Int!): EntityPropertyNumber
+  CreateEntityPropertyPhone(entityName: EntityName!, technicalCode: String!, name: String!, dataStrategyDefinition: Any): EntityPropertyPhone
+  UpdateEntityPropertyPhone(entityPropertyId: ID!, name: String!, dataStrategyDefinition: Any): EntityPropertyPhone
+  CreateEntityPropertyRanking(entityName: EntityName!, technicalCode: String!, name: String!, dataStrategyDefinition: Any, choiceType: EntityPropertyChoiceType!, choiceDefinition: String, referentialName: EntityPropertyReferential): EntityPropertyRanking
+  UpdateEntityPropertyRanking(entityPropertyId: ID!, name: String!, dataStrategyDefinition: Any, choiceType: EntityPropertyChoiceType!, choiceDefinition: String, referentialName: EntityPropertyReferential): EntityPropertyRanking
+  CreateEntityPropertyRankingBacklog(entityName: EntityName!, technicalCode: String!, name: String!, dataStrategyDefinition: Any, choiceType: EntityPropertyChoiceType!, choiceDefinition: String, referentialName: EntityPropertyReferential): EntityPropertyRankingBacklog
+  UpdateEntityPropertyRankingBacklog(entityPropertyId: ID!, name: String!, dataStrategyDefinition: Any, choiceType: EntityPropertyChoiceType!, choiceDefinition: String, referentialName: EntityPropertyReferential): EntityPropertyRankingBacklog
+  CreateEntityPropertyText(entityName: EntityName!, technicalCode: String!, name: String!, dataStrategyDefinition: Any, append: String, textType: EntityPropertyTextType): EntityPropertyText
+  UpdateEntityPropertyText(entityPropertyId: ID!, name: String!, dataStrategyDefinition: Any, append: String): EntityPropertyText
+  UploadTransactionDocument(transactionId: ID!, documentType: DocumentType!, uploadedDocument: UploadDocument!, isForTransactionMoneyMovementDocument: Boolean = false): Transaction
+  SendSubscriptionPack(investmentId: ID!): SubscriptionPackInfos
+  SendSignatureInvitation(investmentId: ID!, signerId: ID!): SignatureInvitationResult
+  UpdateEntityPropertyReferentialChoices(entityPropertyId: ID!, referentialChoices: [ReferentialChoiceInput]!): [ReferentialChoice]
+  UpdatePersonalAccountTaxation(accountId: ID!, pfuExempted: Boolean!, crossBorderWorker: Boolean!): Account
+  UpdateCorporateAccountTaxation(accountId: ID!, taxationType: CorporateAccountTaxationType!): CorporateAccount
+  SetRecurringSubscription(id: ID!, recurrenceFrequency: RecurrenceFrequency!, recurrenceEndAt: Date, recurrenceAmount: Amount!): AccountSecurityContract!
+  SetDistributionReinvestment(id: ID!, needReinvestment: Boolean!, reinvestmentPercentage: Float): AccountSecurityContract!
+  CreateMessageBlock(localizedContent: [LocalizedStringInput]!, enabled: Boolean!, displayConditions: [MessageBlockDisplayCondition], segments: [ID]): MessageBlock
+  UpdateMessageBlock(messageBlockId: ID!, localizedContent: [LocalizedStringInput]!, enabled: Boolean!, displayConditions: [MessageBlockDisplayCondition], segments: [ID]): MessageBlock
+  CreateConfigurableForm(label: String!, type: ConfigurableFormType!, copyFromFormId: ID): ConfigurableForm!
+  UpdateConfigurableForm(configurableFormId: ID!, label: String!): ConfigurableForm!
+  CreateConfigurableFormStep(configurableForm: ID!, label: String!, filterAlgorithmId: ID, copyFromStepId: ID): ConfigurableFormStep
+  UpdateConfigurableFormStepsOrder(configurableFormId: ID!, formSteps: [ConfigurableFormHasStepInput]): [ConfigurableFormHasStep]
+  CreateConfigurableFormQuestion(formStepId: ID!, dataStrategy: FormQuestionDataStrategy!, sortIndex: Int, entityPropertyId: ID, fieldType: String, entityPropertyContext: FormQuestionDataStrategyDefinition): ConfigurableFormQuestion!
+  UpdateConfigurableFormQuestionsOrder(configurableFormQuestions: [ConfigurableFormQuestionSortInput]): [ConfigurableFormQuestion]
+  UpdateConfigurableFormQuestion(id: ID!, append: String, content: String, dataNormalizer: FormQuestionDataNormalizer, dataNormalizerDefinition: Mixed, dataStrategy: FormQuestionDataStrategy, entityPropertyContext: FormQuestionDataStrategyDefinition, entityProperty: EntityPropertyType, extendedValidations: Array, formDefinition: Array, helpText: String, applicable: String, label: String, phpApplicable: String, placeholder: String, sortIndex: Int, technicalCode: String, tooltip: String, totalLabel: String, validations: Array, width: Int, configurableFormQuestionEntityProperties: [ConfigurableFormQuestionEntityPropertyInput]): ConfigurableFormQuestion!
+  DeleteConfigurableFormQuestion(id: ID!): ItemDeletedResponse!
+  DeleteSecurityOperations(ids: [ID]!): ItemsDeletedResponse!
+  PairPendingDismemberedInvestments(
+    usufructInvestmentId: ID!
+    bareOwnershipInvestmentId: ID!
+
+    "Optional - will be computed if not provided"
+    effectiveDate: Date
+
+    "Optional - will be computed if not provided"
+    validationDate: Date
+
+    "Optional - will be computed if not provided (null for life dismemberment)"
+    fullOwnershipReconstitutionDate: Date
+
+    "Required when dryRun is false"
+    documentGeneration: DocumentGenerationInput
+
+    withEmail: Boolean! = false
+
+    "If true, returns preview without persisting"
+    dryRun: Boolean! = false
+  ): PairedDismemberments!
+  CreateDocumentTemplateFillablePdf(name: String!, type: DocumentType!): DocumentTemplateFillablePdf
+  CreateDocumentTemplateContentHtml(name: String!, type: DocumentType!, content: String): DocumentTemplateContentHtml
+  UpdateDocumentTemplateFillablePdf(id: ID!, name: String, type: DocumentType, document: UploadDocument): DocumentTemplateFillablePdf
+  UpdateDocumentTemplateContentHtml(id: ID!, type: DocumentType!, localizedName: [LocalizedStringInput]!, localizedContent: [LocalizedStringInput]!): DocumentTemplateContentHtml
+  DeleteTransactionMoneyMovements(moneyMovementIds: [ID]!): ItemsDeletedResponse!
+  UpdateUserLocale(locale: SupportedLocale!): SupportedLocaleDetailed!
+  ResetTransactionMoneyMovementsExportedState(moneyMovementIds: [ID], forAllTransactions: Boolean, securityOperationId: ID, search: String, filter: TransactionMoneyMovementFiltersInput): [TransactionMoneyMovement]!
+  ReconstituteFullOwnership(pairedDismembermentsInput: PairedDismembermentsInput!, securityNumbering: SecurityNumberingInput!, fullOwnershipReconstitutionDate: Date!): FullOwnershipReconstitution
+  UpdateCapitalCallAmount(capitalCallId: ID!, rawAmount: Int!, withEmail: Boolean!): CapitalCall
+  CreateAdmin(firstName: String!, lastName: String!, email: String!, mobile: String!, persona: Persona!, withEmail: Boolean!): User!
+  CreateAdvisor(firstName: String!, lastName: String!, email: String!, mobile: String!, withEmail: Boolean!, distributorId: ID): User!
+  CreatePledge(transactionId: ID!, securitiesNumber: Float!, bankName: String!, bankAddress: AddressInput!, initialEndDate: Date!, startDate: Date, agreementDocument: UploadDocument): Pledge
+  UpdatePledge(pledgeId: ID!, securitiesNumber: Float, bankName: String, bankAddress: AddressInput, initialEndDate: Date, actualEndDate: Date, agreementDocument: UploadDocument, releaseDocument: UploadDocument): Pledge
+  UpdateSecurityOperationInvestment(securityOperationId: ID!, name: String!, initialMinimalSubscriptionSecurityCount: Float!, nextMinimalSubscriptionSecurityCount: Float!, issuedSecurities: Int!, includedSegmentsIds: [ID!], excludedSegmentsIds: [ID!]): SecurityOperationInvestment
+  UpdateSecurityOperationDistributionAmount(transactionMoneyMovementId: ID!, repartitions: [RepartitionDistributionInput!]!, dryRun: Boolean!): [Distribution]
+  UpdateSecurityOperationCessionFlow(transactionMoneyMovementId: ID!, securitiesNumber: Float!, repartitions: [RepartitionDistributionInput!]!, dryRun: Boolean!): [Cession]
+  CreateGeneralAssembly(generalAssemblyName: String!, vehicleId: ID!, generalAssemblyType: GeneralAssemblyType!, generalAssemblyConveningNumber: GeneralAssemblyConveningNumber!, quorum: Float!, quorumCalculationStrategy: QuorumCalculationStrategy!, votesEndDate: DateTime!, generalAssemblyDate: DateTime!, conveningDate: Date): GeneralAssembly
+  UpdateGeneralAssembly(
+    generalAssemblyId: ID!
+    generalAssemblyName: String
+    generalAssemblyType: GeneralAssemblyType
+    generalAssemblyConveningNumber: GeneralAssemblyConveningNumber
+    quorum: Float
+    quorumCalculationStrategy: QuorumCalculationStrategy
+    conveningDate: Date
+    generalAssemblyDate: DateTime
+    votesEndDate: DateTime
+    mandateDocumentTemplateId: ID
+    conveningDocumentTemplateId: ID
+
+    "Replace all currently associated documents with uploaded documents"
+    documents: [UploadDocument]
+  ): GeneralAssembly
+  CreateGeneralAssemblyResolution(generalAssemblyId: ID!, number: Int!, name: String!, description: String!, majority: Float!, generalAssemblyResolutionType: GeneralAssemblyResolutionType!): GeneralAssembly
+  UpdateGeneralAssemblyResolution(id: ID!, number: Int, name: String, description: String, majority: Float, generalAssemblyResolutionType: GeneralAssemblyResolutionType): GeneralAssemblyResolution
+  DeleteGeneralAssemblyResolution(id: ID!): ItemDeletedResponse
+  AcknowledgeTos: User!
+  ConveneGeneralAssembly(generalAssemblyId: ID!, conveningDate: Date!, votesEndDate: DateTime!, conveningDocumentTemplateId: ID!, withEmail: Boolean): GeneralAssembly
+  UpdateGeneralAssemblyAccountsAttendance(
+    "If provided, apply attendance to the provided accounts. Takes priority."
+    generalAssemblyAccountIds: [ID!]
+
+    "If provided, apply attendance to all accounts of the general assembly"
+    generalAssemblyId: ID
+
+    "Attendance to apply to either the provided accounts or all accounts of the general assembly"
+    attendance: GeneralAssemblyAttendance!
+  ): [GeneralAssemblyAccount]
+  SetDocumentVisibilityForInvestor(
+    "The parent object entity name (AccountDocument, TransactionDocument, or TransactionMoneyMovementDocument)"
+    visibilityParentObjectName: EntityName!
+
+    "The parent object ID for targeted visibility change"
+    visibilityParentObjectId: ID!
+
+    visibleByInvestor: Boolean!
+  ): DocumentVisibilityForInvestor
+  UpdateGeneralAssemblyResolutionVotes(generalAssemblyId: ID!, votes: [GeneralAssemblyResolutionVoteInput!]!): GeneralAssembly
+  CreateCustomExport(name: String!, description: String!): CustomExport
+  UpdateCustomExport(id: ID!, name: String, description: String): CustomExport
+  DeleteCustomExport(id: ID!): ItemDeletedResponse
+  DoCustomExport(id: ID!, format: ExportFileFormat!): CustomExport
+  DeleteInvoice(invoiceId: ID!): ItemDeletedResponse
+  CreateDocumentBatch(name: String!, type: DocumentType, issueDate: Date!, startPeriod: Date!, endPeriod: Date!, target: DocumentBatchTarget!, vehicleId: ID, documentTemplateId: ID, includedSegmentsIds: [ID], uploadedDocuments: [UploadDocument], recipientIds: [ID]): DocumentBatch
+  GenerateDocumentBatchDocuments(documentBatchId: ID!, generationMethod: DocumentBatchGenerationMethod!, recipientIds: [String]): DocumentBatch
+  SetAccountDocumentVisibilityForInvestor(accountDocumentId: ID!, visibleByInvestor: Boolean!): AccountDocument!
+  UpdateSignedDocumentControl(accountId: ID!, formQuestionId: ID!, signatureDateTime: DateTime!, uploadedDocument: UploadDocument): Account!
+  UploadSubscriptionDocuments(investmentId: ID!, uploadedDocuments: [UploadDocument!]!, signatureDate: Date!): Investment!
+  SetAccountDocumentsVisibilityForInvestors(documentBatchId: ID!, accountDocumentsIds: [ID], visibleByInvestors: Boolean!, withEmail: Boolean!, toggleAll: Boolean!): DocumentBatch!
+  SendKycCompletionInvitationEmail(investmentId: ID!): Boolean!
+  SendInvestmentPaymentInformationEmail(investmentId: ID!): Boolean!
+  MarkKycToReview(accountId: ID!): Boolean!
+  ApproveKycReview(accountId: ID!, withEmail: Boolean!): Account!
+  RefuseKycReview(accountId: ID!, withEmail: Boolean!, refusedComment: String!): Account!
+  ImportConfigurableFormConfig(configFile: UploadDocument!, configurableFormId: ID!, dryRun: Boolean!): ConfigurableFormConfigImportReport!
+}
+
+input SecurityOperationDocumentInput {
+  id: ID
+  documentTemplateId: ID!
+  documentFilterAlgorithmId: ID
+  generationTrigger: SecurityOperationDocumentGenerationTrigger!
+  sortIndex: Int
+  defaultVisibilityByInvestor: Boolean! = false
+}
+
+input SecurityOperationAllotmentInput {
+  algorithmId: ID!
+  startDate: Date
+}
+
+input RepartitionDistributionInput {
+  distributionType: DistributionType!
+  distributionTaxation: DistributionTaxation!
+  priceBySecurity: PreciseAmount
+  maximumDispatchableAmount: Amount
+  recallablePercentage: Float
+}
+
+"A Security Operation Cession"
+type SecurityOperationCession implements SecurityOperation & SecurityOperationWithOneTransactionSecurity & SecurityOperationAmountComputableAlgorithm & SecurityOperationWithMultipleRepartitionDistributionTypeInterface {
+  id: ID!
+  securityOperationDocuments: [SecurityOperationDocument]
+  name: String
+  status: SecurityOperationStatus @deprecated(reason: "Use securityOperationStatus instead")
+  securityOperationStatus: SecurityOperationStatusDetailed
+  type: SecurityOperationType!
+  securityOperationType: SecurityOperationTypeDetailed!
+  transactions(resultsPerPage: Int, page: Int = 1, search: String): TransactionConnection
+  moneyMovements(resultsPerPage: Int, page: Int = 1, search: String, filter: TransactionMoneyMovementFiltersInput): TransactionMoneyMovementConnection
+  kpiValues: [KpiValue]
+  asynchronousOperations: [AsynchronousOperation]
+  transactionSecurity: TransactionSecurity!
+  amountComputeAlgorithm: Algorithm!
+  priceBySecurity: Amount
+  maximumDispatchableAmount: Amount
+  startDate: Date
+  endDate: Date
+  date: Date
+  repartitions: [RepartitionDistributionType]!
+  percentageOfSecurities: Float
+  lastOperation: Operation
+  security: Security!
+  issuerCompany: IssuerCompany!
+  investorsSelectionStrategy: InvestorsSelectionStrategy!
+  securityOperationInvestorsSelectionStrategy: InvestorsSelectionStrategyDetailed!
+  bankWireReference: String
+}
+
+interface SecurityOperationAmountComputableAlgorithm {
+  amountComputeAlgorithm: Algorithm!
+  priceBySecurity: Amount
+  maximumDispatchableAmount: Amount
+  startDate: Date
+  endDate: Date
+  date: Date
+}
+
+interface SecurityOperationWithMultipleRepartitionDistributionTypeInterface {
+  repartitions: [RepartitionDistributionType]!
+}
+
+type RepartitionDistributionType {
+  distributionType: DistributionTypeDetailed!
+  distributionTaxation: DistributionTaxationDetailed!
+  priceBySecurity: PreciseAmount
+  maximumDispatchableAmount: Amount
+  recallablePercentage: Float
+}
+
+"A Security Operation Distribution"
+type SecurityOperationDistribution implements SecurityOperation & SecurityOperationWithOneTransactionSecurity & SecurityOperationAmountComputableAlgorithm & SecurityOperationWithMultipleRepartitionDistributionTypeInterface {
+  id: ID!
+  securityOperationDocuments: [SecurityOperationDocument]
+  name: String
+  status: SecurityOperationStatus @deprecated(reason: "Use securityOperationStatus instead")
+  securityOperationStatus: SecurityOperationStatusDetailed
+  type: SecurityOperationType!
+  securityOperationType: SecurityOperationTypeDetailed!
+  transactions(resultsPerPage: Int, page: Int = 1, search: String): TransactionConnection
+  moneyMovements(resultsPerPage: Int, page: Int = 1, search: String, filter: TransactionMoneyMovementFiltersInput): TransactionMoneyMovementConnection
+  kpiValues: [KpiValue]
+  asynchronousOperations: [AsynchronousOperation]
+  transactionSecurity: TransactionSecurity!
+  amountComputeAlgorithm: Algorithm!
+  priceBySecurity: Amount
+  maximumDispatchableAmount: Amount
+  startDate: Date
+  endDate: Date
+  date: Date
+  repartitions: [RepartitionDistributionType]!
+  lastOperation: Operation
+  security: Security!
+  issuerCompany: IssuerCompany!
+  investorsSelectionStrategy: InvestorsSelectionStrategy!
+  securityOperationInvestorsSelectionStrategy: InvestorsSelectionStrategyDetailed!
+  distributionType: DistributionType @deprecated(reason: "Use securityOperationDistributionType instead")
+  securityOperationDistributionType: DistributionTypeDetailed
+  bankWireReference: String
+}
+
+"A Distribution"
+type Distribution implements Transaction & DistributionDetail {
+  id: ID
+  type: TransactionType! @deprecated(reason: "Use transactionType instead")
+  transactionType: TransactionTypeDetailed!
+  securitiesNumber: Float!
+  unpledgedSecuritiesNumber: Float!
+  transactionDocuments: [TransactionDocument]
+  transactionMoneyMovement: TransactionMoneyMovement
+  transactionFees: [TransactionFee]
+  priceBySecurity: Float!
+  amount: Amount!
+  rawAmount: Amount!
+  securityOperation: SecurityOperation @deprecated(reason: "Use transactionSecurity.securityOperation")
+  transactionSecurity: TransactionSecurity
+  fromAccount: Account
+  toAccount: Account
+  transactionNumberings: [TransactionNumbering]
+  dismembermentType: DismembermentTypeDetailed
+
+  "URL to download the zip file containing all transaction documents. Only for Investments and CapitalCalls"
+  documentsZipFileUrl: String!
+
+  distributionType: DistributionTypeDetailed!
+  distributionTaxation: DistributionTaxationDetailed!
+  reinvestmentPercentage: Float
+  reinvestmentAmount: Amount
+  taxationAmount: Amount
+  taxationDetails: Array
+}
+
+"A Security Operation CapitalCall"
+type SecurityOperationCapitalCall implements SecurityOperation & SecurityOperationWithOneTransactionSecurity {
+  id: ID!
+  securityOperationDocuments: [SecurityOperationDocument]
+  name: String
+  status: SecurityOperationStatus @deprecated(reason: "Use securityOperationStatus instead")
+  securityOperationStatus: SecurityOperationStatusDetailed
+  type: SecurityOperationType!
+  securityOperationType: SecurityOperationTypeDetailed!
+  transactions(resultsPerPage: Int, page: Int = 1, search: String): TransactionConnection
+  moneyMovements(resultsPerPage: Int, page: Int = 1, search: String, filter: TransactionMoneyMovementFiltersInput): TransactionMoneyMovementConnection
+  kpiValues: [KpiValue]
+  asynchronousOperations: [AsynchronousOperation]
+  transactionSecurity: TransactionSecurity!
+  amountToCall: Amount
+  capitalCallPercentage: Float
+  date: Date
+  lastOperation: Operation
+  security: Security!
+  issuerCompany: IssuerCompany!
+  investorsSelectionStrategy: InvestorsSelectionStrategy!
+  securityOperationInvestorsSelectionStrategy: InvestorsSelectionStrategyDetailed!
+}
+
+input DocumentGenerationInput {
+  behaviour: DocumentGenerationBehaviour!
+  documentTemplateId: ID
+
+  "Handled only with RegenerateCapitalCallDocument"
+  visibleByInvestor: Boolean = true
+}
+
+"A CapitalCall"
+type CapitalCall implements Transaction {
+  id: ID
+  type: TransactionType! @deprecated(reason: "Use transactionType instead")
+  transactionType: TransactionTypeDetailed!
+  securitiesNumber: Float!
+  unpledgedSecuritiesNumber: Float!
+  transactionDocuments: [TransactionDocument]
+  transactionMoneyMovement: TransactionMoneyMovement
+  transactionFees: [TransactionFee]
+  priceBySecurity: Float!
+  amount: Amount!
+  rawAmount: Amount!
+  securityOperation: SecurityOperation @deprecated(reason: "Use transactionSecurity.securityOperation")
+  transactionSecurity: TransactionSecurity
+  fromAccount: Account
+  toAccount: Account
+  transactionNumberings: [TransactionNumbering]
+  dismembermentType: DismembermentTypeDetailed
+
+  "URL to download the zip file containing all transaction documents. Only for Investments and CapitalCalls"
+  documentsZipFileUrl: String!
+
+  details: Array!
+}
+
+input CompanyCorporateAccountInput {
+  corporateName: String!
+  legalStatusId: ID!
+  address: AddressInput!
+  representative: CompanyCorporateAccountRepresentativeInput!
+  registrationIdentifier: String
+  socialCapital: Float
+  registrationCity: String
+}
+
+input AddressInput {
+  street: String!
+  postalCode: String!
+  city: String!
+  countryId: ID!
+}
+
+input CompanyCorporateAccountRepresentativeInput {
+  representativePersonal: CompanyCorporateAccountRepresentativePersonalInput
+  representativeCorporate: CompanyCorporateAccountRepresentativeCorporateInput
+}
+
+input CompanyCorporateAccountRepresentativePersonalInput {
+  representativeFirstName: String!
+  representativeLastName: String!
+}
+
+input CompanyCorporateAccountRepresentativeCorporateInput {
+  representativeCorporateName: String!
+}
+
+input TargetInfoInput {
+  activity: String
+  pmsSectorId: ID
+  localization: String
+  contactEmail: String
+  contactPhone: String
+  contactJobPosition: String
+  investmentOfficer: String
+}
+
+scalar UploadDocument
+
+type ItemDeletedResponse {
+  success: Boolean!
+  message: String!
+  item: ItemDeleted
+}
+
+"A generic depiction of a deleted item"
+type ItemDeleted {
+  typeName: String!
+  id: ID!
+}
+
+input OperationFinancingInfoIndicatorInput {
+  label: String!
+  value: String!
+}
+
+input LocalizedStringInput {
+  locale: SupportedLocale!
+  value: String!
+}
+
+input LocalizedOperationFinancingInfoIndicatorInput {
+  locale: SupportedLocale!
+  value: [OperationFinancingInfoIndicatorInput]
+}
+
+input BankAccountInput {
+  bankName: String
+  holderName: String
+  bic: String!
+  iban: String!
+  uploadDocument: UploadDocument
+  externalProvider: ProviderType
+  externalId: String
+}
+
+"A Security fee entry"
+type SecurityFeeEntry implements SecurityFee {
+  id: ID!
+  securityFeePattern: SecurityFeePattern!
+  type: String!
+  feeType: FeeTypeDetailed!
+  label: String!
+  name: String!
+  localizedName: [LocalizedString]!
+  calculationType: FeeCalculationTypeDetailed
+  calculationBasis: FeeCalculationBasisDetailed
+  calculationPeriodicity: FeeCalculationPeriodicityDetailed
+  feeVatPercentage: Float!
+  feeAtePercentage: Float!
+  feeAtiPercentage: Float!
+  retrocessionAtePercentage: Float
+}
+
+"A Security fee management"
+type SecurityFeeManagement implements SecurityFee {
+  id: ID!
+  securityFeePattern: SecurityFeePattern!
+  type: String!
+  feeType: FeeTypeDetailed!
+  label: String!
+  name: String!
+  localizedName: [LocalizedString]!
+  calculationType: FeeCalculationTypeDetailed
+  calculationBasis: FeeCalculationBasisDetailed
+  calculationPeriodicity: FeeCalculationPeriodicityDetailed
+  feeVatPercentage: Float!
+  feeAtePercentage: Float!
+  feeAtiPercentage: Float!
+  retrocessionAtePercentage: Float
+}
+
+"A Security fee consultancy"
+type SecurityFeeConsultancy implements SecurityFee {
+  id: ID!
+  securityFeePattern: SecurityFeePattern!
+  type: String!
+  feeType: FeeTypeDetailed!
+  label: String!
+  name: String!
+  localizedName: [LocalizedString]!
+  calculationType: FeeCalculationTypeDetailed
+  calculationBasis: FeeCalculationBasisDetailed
+  calculationPeriodicity: FeeCalculationPeriodicityDetailed
+  maximumFeeAtiPercentage: Float!
+}
+
+enum FeeCalculationMethod {
+  Exact360
+  Exact365
+  Exact365_25
+  Fixed
+}
+
+"A Security fee premium subscription"
+type SecurityFeePremiumSubscription implements SecurityFee {
+  id: ID!
+  securityFeePattern: SecurityFeePattern!
+  type: String!
+  feeType: FeeTypeDetailed!
+  label: String!
+  name: String!
+  localizedName: [LocalizedString]!
+  calculationType: FeeCalculationTypeDetailed
+  calculationBasis: FeeCalculationBasisDetailed
+  calculationPeriodicity: FeeCalculationPeriodicityDetailed
+  feeVatPercentage: Float!
+  feeAtePercentage: Float!
+  feeAtiPercentage: Float!
+  startDate: Date
+  calculationMethod: FeeCalculationMethodDetailed!
+  retrocessionAtePercentage: Float
+}
+
+type FeeCalculationMethodDetailed {
+  code: FeeCalculationMethod!
+  label: String!
+}
+
+enum ComplianceControlAction {
+  Reset
+  Escalate
+}
+
+input ObligationSpecificInput {
+  expectedRate: Float!
+  duration: Int!
+}
+
+input ConvertibleObligationSpecificInput {
+  expectedRate: Float!
+  duration: Int!
+}
+
+input ScpiShareSpecificInput {
+  effectiveDateDelayInMonths: Int
+  effectiveDateDelayInDays: Int
+  enteredIntoAccountDocumentTemplateId: ID!
+}
+
+input FundShareSpecificInput {
+  isin: String
+  duration: Int
+  hurdle: Float
+}
+
+"A Security Operation Transfer"
+type SecurityOperationTransfer implements SecurityOperation & SecurityOperationWithMultipleTransactionSecurity {
+  id: ID!
+  securityOperationDocuments: [SecurityOperationDocument]
+  name: String
+  status: SecurityOperationStatus @deprecated(reason: "Use securityOperationStatus instead")
+  securityOperationStatus: SecurityOperationStatusDetailed
+  type: SecurityOperationType!
+  securityOperationType: SecurityOperationTypeDetailed!
+  transactions(resultsPerPage: Int, page: Int = 1, search: String): TransactionConnection
+  moneyMovements(resultsPerPage: Int, page: Int = 1, search: String, filter: TransactionMoneyMovementFiltersInput): TransactionMoneyMovementConnection
+  kpiValues: [KpiValue]
+  asynchronousOperations: [AsynchronousOperation]
+  transactionSecurities: [TransactionSecurity]!
+  date: Date
+  fromAccount: Account!
+}
+
+"A Security Operation"
+interface SecurityOperationWithMultipleTransactionSecurity implements SecurityOperation {
+  id: ID!
+  securityOperationDocuments: [SecurityOperationDocument]
+  name: String
+  status: SecurityOperationStatus @deprecated(reason: "Use securityOperationStatus instead")
+  securityOperationStatus: SecurityOperationStatusDetailed
+  type: SecurityOperationType!
+  securityOperationType: SecurityOperationTypeDetailed!
+  transactions(resultsPerPage: Int, page: Int = 1, search: String): TransactionConnection
+  moneyMovements(resultsPerPage: Int, page: Int = 1, search: String, filter: TransactionMoneyMovementFiltersInput): TransactionMoneyMovementConnection
+  kpiValues: [KpiValue]
+  asynchronousOperations: [AsynchronousOperation]
+  transactionSecurities: [TransactionSecurity]!
+}
+
+"A Security Operation Dismemberment"
+type SecurityOperationDismemberment implements SecurityOperation & SecurityOperationWithMultipleTransactionSecurity {
+  id: ID!
+  securityOperationDocuments: [SecurityOperationDocument]
+  name: String
+  status: SecurityOperationStatus @deprecated(reason: "Use securityOperationStatus instead")
+  securityOperationStatus: SecurityOperationStatusDetailed
+  type: SecurityOperationType!
+  securityOperationType: SecurityOperationTypeDetailed!
+  transactions(resultsPerPage: Int, page: Int = 1, search: String): TransactionConnection
+  moneyMovements(resultsPerPage: Int, page: Int = 1, search: String, filter: TransactionMoneyMovementFiltersInput): TransactionMoneyMovementConnection
+  kpiValues: [KpiValue]
+  asynchronousOperations: [AsynchronousOperation]
+  transactionSecurities: [TransactionSecurity]!
+  account: Account!
+  date: Date
+}
+
+"A Transfer"
+type Transfer implements Transaction {
+  id: ID
+  type: TransactionType! @deprecated(reason: "Use transactionType instead")
+  transactionType: TransactionTypeDetailed!
+  securitiesNumber: Float!
+  unpledgedSecuritiesNumber: Float!
+  transactionDocuments: [TransactionDocument]
+  transactionMoneyMovement: TransactionMoneyMovement
+  transactionFees: [TransactionFee]
+  priceBySecurity: Float!
+  amount: Amount!
+  rawAmount: Amount!
+  securityOperation: SecurityOperation @deprecated(reason: "Use transactionSecurity.securityOperation")
+  transactionSecurity: TransactionSecurity
+  fromAccount: Account
+  toAccount: Account
+  transactionNumberings: [TransactionNumbering]
+  dismembermentType: DismembermentTypeDetailed
+
+  "URL to download the zip file containing all transaction documents. Only for Investments and CapitalCalls"
+  documentsZipFileUrl: String!
+
+  operation: Operation @deprecated(reason: "Use `transactionSecurity { operation }`")
+  viewerActingLike: TransferViewerActingLike
+  endEffectiveDate: Date
+}
+
+type Dismemberment implements Transaction {
+  id: ID
+  type: TransactionType! @deprecated(reason: "Use transactionType instead")
+  transactionType: TransactionTypeDetailed!
+  securitiesNumber: Float!
+  unpledgedSecuritiesNumber: Float!
+  transactionDocuments: [TransactionDocument]
+  transactionMoneyMovement: TransactionMoneyMovement
+  transactionFees: [TransactionFee]
+  priceBySecurity: Float!
+  amount: Amount!
+  rawAmount: Amount!
+  securityOperation: SecurityOperation @deprecated(reason: "Use transactionSecurity.securityOperation")
+  transactionSecurity: TransactionSecurity
+  fromAccount: Account
+  toAccount: Account
+  transactionNumberings: [TransactionNumbering]
+  dismembermentType: DismembermentTypeDetailed
+
+  "URL to download the zip file containing all transaction documents. Only for Investments and CapitalCalls"
+  documentsZipFileUrl: String!
+
+  effectiveDate: Date
+  dismembermentDurationInYears: Int
+}
+
+type JointAccount implements Account {
+  id: ID!
+  createdAt: DateTime!
+  documentControls: [AccountDocumentControl]
+  mostRecentVialinkControl: VialinkControl
+  label: String!
+  type: AccountType! @deprecated(reason: "Use `accountType`")
+  accountType: AccountTypeDetailed!
+  lcbftLevel: LcbftLevel! @deprecated(reason: "Use investorInfo.lcbftLevel instead")
+  lcbftLevelDetailed: LcbftLevelDetailed! @deprecated(reason: "Use investorInfo.lcbftLevelDetailed instead")
+  kycExpirationDate: DateTime
+  kycStatus: KycStatus! @deprecated(reason: "use kycStatusDetailed instead")
+  kycStatusDetailed: KycStatusDetailed!
+  kycRefusedComment: String
+  investorInfo: InvestorInfo!
+  user(
+    "Optional user ID to return instead of the account's default user"
+    userId: ID
+  ): User
+  canValidateKyc: Boolean
+  kycAnalysisResult: Array
+  accountDocuments: [AccountDocument]
+  bankAccounts: [BankAccount]
+  bankAccountByBankAccountType(
+    bankAccountType: BankAccountType!
+
+    "If true, will return the default bank account if no bank account of the given type is found"
+    fallbackToDefault: Boolean = false
+  ): BankAccount
+  accountSecurityContracts: [AccountSecurityContract]
+  investmentsAndTransfers(securityId: ID, transactionMoneyMovementState: TransactionMoneyMovementState): [Transaction]
+  investments(operationStates: [OperationState]): [Investment]
+  cessions(securityId: ID): [Cession]
+  countryRisk: LcbftLevel! @deprecated(reason: "Use countryRiskDetailed instead")
+  activitySectorRisk: LcbftLevel! @deprecated(reason: "Use activitySectorRiskDetailed instead")
+  relationshipRisk: LcbftLevel! @deprecated(reason: "Use relationshipRiskDetailed instead")
+  ppeRisk: LcbftLevel! @deprecated(reason: "Use ppeRiskDetailed instead")
+  sanctionsRisk: LcbftLevel! @deprecated(reason: "Use sanctionsRiskDetailed instead")
+  countryRiskDetailed: LcbftLevelDetailed!
+  activitySectorRiskDetailed: LcbftLevelDetailed!
+  relationshipRiskDetailed: LcbftLevelDetailed!
+  ppeRiskDetailed: LcbftLevelDetailed!
+  sanctionsRiskDetailed: LcbftLevelDetailed!
+  adequate: Boolean
+  distributedByAdvisor: DistributorAdvisor
+  signedDocuments: [AccountDocumentControl]
+  signersStatuses: [SignerStatus!]!
+  history(
+    "One of 'account', 'kyc' or 'lcbft'"
+    type: String!
+  ): [AccountLogHistory]!
+  kycStep: ConfigurableFormStep
+  accountComments: [AccountComment]
+  accountPersona: AccountPersonaDetailed!
+  suggestedExpirationDate: DateTime
+  portfolio(
+    "The portfolio will be rendered as the state it was at this date"
+    visualizationDate: Date
+  ): Portfolio
+  personalInfo: PersonalInfo!
+  secondPersonalInfo: PersonalInfo!
+  pfuExempted: Boolean!
+  crossBorderWorker: Boolean!
+}
+
+input FormAnswerInput {
+  formQuestionId: ID!
+  value: Any
+  uploadDocument: UploadDocument @deprecated(reason: "Use `uploadDocuments` instead")
+  uploadDocuments: UploadDocumentsInput
+}
+
+input UploadDocumentsInput {
+  documents: [UploadDocument]
+
+  "Merge uploaded documents with former answer"
+  mergeWithFormerAnswer: Boolean!
+}
+
+input AutomaticInvoiceInput {
+  documentTemplateId: ID!
+}
+
+input ExistingInvoiceInput {
+  number: String!
+  document: UploadDocument!
+}
+
+input UploadedDocumentInput {
+  type: DocumentType!
+  name: String
+  uploadDocument: UploadDocument
+}
+
+input HelpLinkAndPersona {
+  persona: Persona!
+  helpLink: String!
+}
+
+type Configuration {
+  id: ID!
+  partnerEmail: String!
+  partnerName: String!
+  emailPrimaryColor: String!
+  logoDarkUrl: String!
+  logoLightUrl: String!
+  faviconUrl: String!
+  injectedCss: String!
+  dealflowManagementUrl: String
+  signInConfiguration: Array!
+  minimumPasswordLength: Int!
+  kycDistributorHasStep: Boolean!
+  alertingCategory: String
+  helpConfiguration: Array!
+
+  "An http link or a mailto:xxx link"
+  helpUrl: String
+
+  "The data to configure the message block"
+  messageBlockConfiguration: MessageBlock
+
+  "The message block to display conditionally"
+  displayableMessageBlock: MessageBlock
+
+  supportedLocales: [SupportedLocaleDetailed]!
+  defaultLocale: SupportedLocaleDetailed!
+  usedBankAccountTypes: UsedBankAccountTypesByAccountPersona!
+
+  "Whether this is a pre-production environment"
+  isPreProd: Boolean!
+
+  "PreProduction url"
+  urlPreProd: String!
+
+  "Production url"
+  urlProd: String!
+
+  documentBatchAsynchronousThreshold: Int!
+  documentBatchToggleVisibilityAsynchronousThreshold: Int!
+
+  "Default number of results per page for paginated queries"
+  paginationDefaultResultsNumber: Int!
+}
+
+type MessageBlock {
+  id: ID!
+  content: String
+  localizedContent: [LocalizedString]!
+  enabled: Boolean!
+  displayConditions: [MessageBlockDisplayCondition]!
+  segments: [Segment]
+}
+
+enum MessageBlockDisplayCondition {
+  NoOperation
+  HasOperation
+}
+
+type UsedBankAccountTypesByAccountPersona {
+  Investor: [BankAccountTypeDetailed]!
+  Distributor: [BankAccountTypeDetailed]!
+  DistributorNetwork: [BankAccountTypeDetailed]!
+  Vehicle: [BankAccountTypeDetailed]!
+}
+
+"An address"
+type EntityPropertyAddress implements EntityProperty {
+  id: ID!
+  type: EntityPropertyTypeDetailed!
+  entityName: EntityNameDetailed!
+  technicalCode: String!
+  code: String! @deprecated(reason: "Use `technicalCode`")
+  name: String!
+  dataStrategy: EntityPropertyDataStrategyDetailed!
+  dataStrategyDefinition: String
+  createdBy: String!
+  createdAt: DateTime!
+  editable: Boolean!
+  specificTreatment: EntityPropertySpecificTreatmentDetailed
+}
+
+"An amount"
+type EntityPropertyAmount implements EntityProperty {
+  id: ID!
+  type: EntityPropertyTypeDetailed!
+  entityName: EntityNameDetailed!
+  technicalCode: String!
+  code: String! @deprecated(reason: "Use `technicalCode`")
+  name: String!
+  dataStrategy: EntityPropertyDataStrategyDetailed!
+  dataStrategyDefinition: String
+  createdBy: String!
+  createdAt: DateTime!
+  editable: Boolean!
+  specificTreatment: EntityPropertySpecificTreatmentDetailed
+}
+
+"A boolean"
+type EntityPropertyBoolean implements EntityProperty {
+  id: ID!
+  type: EntityPropertyTypeDetailed!
+  entityName: EntityNameDetailed!
+  technicalCode: String!
+  code: String! @deprecated(reason: "Use `technicalCode`")
+  name: String!
+  dataStrategy: EntityPropertyDataStrategyDetailed!
+  dataStrategyDefinition: String
+  createdBy: String!
+  createdAt: DateTime!
+  editable: Boolean!
+  specificTreatment: EntityPropertySpecificTreatmentDetailed
+}
+
+enum EntityPropertyChoiceMultipleDisplayType {
+  Short
+  Long
+}
+
+enum EntityPropertyChoiceType {
+  ReferentialChoice
+  Referential
+  SqlQuery
+  PropertyAccessor
+}
+
+enum EntityPropertyReferential {
+  LegalStatus
+  ActivitySector
+  Country
+}
+
+"A multiple choice"
+type EntityPropertyChoiceMultiple implements EntityProperty {
+  id: ID!
+  type: EntityPropertyTypeDetailed!
+  entityName: EntityNameDetailed!
+  technicalCode: String!
+  code: String! @deprecated(reason: "Use `technicalCode`")
+  name: String!
+  dataStrategy: EntityPropertyDataStrategyDetailed!
+  dataStrategyDefinition: String
+  createdBy: String!
+  createdAt: DateTime!
+  editable: Boolean!
+  specificTreatment: EntityPropertySpecificTreatmentDetailed
+  displayType: EntityPropertyChoiceMultipleDisplayTypeDetailed!
+  choiceType: EntityPropertyChoiceTypeDetailed!
+  choiceDefinition: String
+  referentialName: EntityPropertyReferentialDetailed
+  referentialChoices: [ReferentialChoice]
+}
+
+type EntityPropertyChoiceMultipleDisplayTypeDetailed {
+  code: EntityPropertyChoiceMultipleDisplayType!
+  label: String!
+}
+
+type EntityPropertyChoiceTypeDetailed {
+  code: EntityPropertyChoiceType!
+  label: String!
+}
+
+type EntityPropertyReferentialDetailed {
+  code: EntityPropertyReferential!
+  label: String!
+}
+
+enum EntityPropertyChoiceUniqueDisplayType {
+  Select
+  Short
+  Long
+}
+
+"A unique choice"
+type EntityPropertyChoiceUnique implements EntityProperty {
+  id: ID!
+  type: EntityPropertyTypeDetailed!
+  entityName: EntityNameDetailed!
+  technicalCode: String!
+  code: String! @deprecated(reason: "Use `technicalCode`")
+  name: String!
+  dataStrategy: EntityPropertyDataStrategyDetailed!
+  dataStrategyDefinition: String
+  createdBy: String!
+  createdAt: DateTime!
+  editable: Boolean!
+  specificTreatment: EntityPropertySpecificTreatmentDetailed
+  displayType: EntityPropertyChoiceUniqueDisplayTypeDetailed!
+  choiceType: EntityPropertyChoiceTypeDetailed!
+  choiceDefinition: String
+  referentialName: EntityPropertyReferentialDetailed
+  referentialChoices: [ReferentialChoice]
+}
+
+type EntityPropertyChoiceUniqueDisplayTypeDetailed {
+  code: EntityPropertyChoiceUniqueDisplayType!
+  label: String!
+}
+
+"An enriched city, with postal code, country, and Insee code if French"
+type EntityPropertyCityEnriched implements EntityProperty {
+  id: ID!
+  type: EntityPropertyTypeDetailed!
+  entityName: EntityNameDetailed!
+  technicalCode: String!
+  code: String! @deprecated(reason: "Use `technicalCode`")
+  name: String!
+  dataStrategy: EntityPropertyDataStrategyDetailed!
+  dataStrategyDefinition: String
+  createdBy: String!
+  createdAt: DateTime!
+  editable: Boolean!
+  specificTreatment: EntityPropertySpecificTreatmentDetailed
+}
+
+"A city name"
+type EntityPropertyCityName implements EntityProperty {
+  id: ID!
+  type: EntityPropertyTypeDetailed!
+  entityName: EntityNameDetailed!
+  technicalCode: String!
+  code: String! @deprecated(reason: "Use `technicalCode`")
+  name: String!
+  dataStrategy: EntityPropertyDataStrategyDetailed!
+  dataStrategyDefinition: String
+  createdBy: String!
+  createdAt: DateTime!
+  editable: Boolean!
+  specificTreatment: EntityPropertySpecificTreatmentDetailed
+}
+
+"A date"
+type EntityPropertyDate implements EntityProperty {
+  id: ID!
+  type: EntityPropertyTypeDetailed!
+  entityName: EntityNameDetailed!
+  technicalCode: String!
+  code: String! @deprecated(reason: "Use `technicalCode`")
+  name: String!
+  dataStrategy: EntityPropertyDataStrategyDetailed!
+  dataStrategyDefinition: String
+  createdBy: String!
+  createdAt: DateTime!
+  editable: Boolean!
+  specificTreatment: EntityPropertySpecificTreatmentDetailed
+}
+
+enum EntityPropertyDocumentFormatType {
+  document_or_image
+  spreadsheet
+}
+
+"A document"
+type EntityPropertyDocument implements EntityProperty {
+  id: ID!
+  type: EntityPropertyTypeDetailed!
+  entityName: EntityNameDetailed!
+  technicalCode: String!
+  code: String! @deprecated(reason: "Use `technicalCode`")
+  name: String!
+  dataStrategy: EntityPropertyDataStrategyDetailed!
+  dataStrategyDefinition: String
+  createdBy: String!
+  createdAt: DateTime!
+  editable: Boolean!
+  specificTreatment: EntityPropertySpecificTreatmentDetailed
+  accountDocumentType: AccountDocumentType
+
+  "The format of the document"
+  documentFormat: EntityPropertyDocumentFormatType!
+
+  "The type of the document"
+  documentType: DocumentTypeDetailed
+}
+
+"A document to sign"
+type EntityPropertyDocumentToSign implements EntityProperty {
+  id: ID!
+  type: EntityPropertyTypeDetailed!
+  entityName: EntityNameDetailed!
+  technicalCode: String!
+  code: String! @deprecated(reason: "Use `technicalCode`")
+  name: String!
+  dataStrategy: EntityPropertyDataStrategyDetailed!
+  dataStrategyDefinition: String
+  createdBy: String!
+  createdAt: DateTime!
+  editable: Boolean!
+  specificTreatment: EntityPropertySpecificTreatmentDetailed
+  documentTemplate: DocumentTemplate!
+}
+
+"A number"
+type EntityPropertyNumber implements EntityProperty {
+  id: ID!
+  type: EntityPropertyTypeDetailed!
+  entityName: EntityNameDetailed!
+  technicalCode: String!
+  code: String! @deprecated(reason: "Use `technicalCode`")
+  name: String!
+  dataStrategy: EntityPropertyDataStrategyDetailed!
+  dataStrategyDefinition: String
+  createdBy: String!
+  createdAt: DateTime!
+  editable: Boolean!
+  specificTreatment: EntityPropertySpecificTreatmentDetailed
+  append: String
+  numPrecision: Int!
+}
+
+"A phone number"
+type EntityPropertyPhone implements EntityProperty {
+  id: ID!
+  type: EntityPropertyTypeDetailed!
+  entityName: EntityNameDetailed!
+  technicalCode: String!
+  code: String! @deprecated(reason: "Use `technicalCode`")
+  name: String!
+  dataStrategy: EntityPropertyDataStrategyDetailed!
+  dataStrategyDefinition: String
+  createdBy: String!
+  createdAt: DateTime!
+  editable: Boolean!
+  specificTreatment: EntityPropertySpecificTreatmentDetailed
+}
+
+"A ranking"
+type EntityPropertyRanking implements EntityProperty {
+  id: ID!
+  type: EntityPropertyTypeDetailed!
+  entityName: EntityNameDetailed!
+  technicalCode: String!
+  code: String! @deprecated(reason: "Use `technicalCode`")
+  name: String!
+  dataStrategy: EntityPropertyDataStrategyDetailed!
+  dataStrategyDefinition: String
+  createdBy: String!
+  createdAt: DateTime!
+  editable: Boolean!
+  specificTreatment: EntityPropertySpecificTreatmentDetailed
+  choiceType: EntityPropertyChoiceTypeDetailed!
+  choiceDefinition: String
+  referentialName: EntityPropertyReferentialDetailed
+  referentialChoices: [ReferentialChoice]
+}
+
+"A ranking with backlog"
+type EntityPropertyRankingBacklog implements EntityProperty {
+  id: ID!
+  type: EntityPropertyTypeDetailed!
+  entityName: EntityNameDetailed!
+  technicalCode: String!
+  code: String! @deprecated(reason: "Use `technicalCode`")
+  name: String!
+  dataStrategy: EntityPropertyDataStrategyDetailed!
+  dataStrategyDefinition: String
+  createdBy: String!
+  createdAt: DateTime!
+  editable: Boolean!
+  specificTreatment: EntityPropertySpecificTreatmentDetailed
+  choiceType: EntityPropertyChoiceTypeDetailed!
+  choiceDefinition: String
+  referentialName: EntityPropertyReferentialDetailed
+  referentialChoices: [ReferentialChoice]
+}
+
+"A text field"
+type EntityPropertyText implements EntityProperty {
+  id: ID!
+  type: EntityPropertyTypeDetailed!
+  entityName: EntityNameDetailed!
+  technicalCode: String!
+  code: String! @deprecated(reason: "Use `technicalCode`")
+  name: String!
+  dataStrategy: EntityPropertyDataStrategyDetailed!
+  dataStrategyDefinition: String
+  createdBy: String!
+  createdAt: DateTime!
+  editable: Boolean!
+  specificTreatment: EntityPropertySpecificTreatmentDetailed
+  append: String
+
+  "The type of text field"
+  textType: EntityPropertyTextType!
+}
+
+type SubscriptionPackInfos {
+  signatureLink: String!
+  investment: Investment!
+}
+
+type SignatureInvitationResult {
+  success: Boolean!
+}
+
+input ReferentialChoiceInput {
+  id: ID
+  label: String
+  localizedLabel: [LocalizedStringInput]
+  technicalCode: String!
+  sortIndex: Int!
+  isDisplayed: Boolean!
+}
+
+input ConfigurableFormHasStepInput {
+  id: ID!
+  sortIndex: Int!
+}
+
+input ConfigurableFormQuestionSortInput {
+  id: ID!
+  sortIndex: Int!
+}
+
+input ConfigurableFormQuestionEntityPropertyInput {
+  entityPropertyId: ID!
+  id: ID
+  sortIndex: Int!
+  label: String
+  tooltip: String
+  placeholder: String
+  helpText: String
+}
+
+type ItemsDeletedResponse {
+  deleted: [ItemDeletedResponse!]
+  skippedIds: [ID]
+  countDeleted: Int!
+  countSkipped: Int!
+}
+
+input PairedDismembermentsInput {
+  securityId: ID!
+  bareOwnershipAccountId: ID!
+  usufructAccountId: ID!
+  securitiesNumber: Float!
+  dismembermentEndDate: Date
+}
+
+input SecurityNumberingInput {
+  start: Float!
+  end: Float!
+}
+
+"A response wrapping informations about a full ownership reconstitution"
+type FullOwnershipReconstitution {
+  fullOwnershipReconstitutionDate: Date!
+  hasBeenReconstituted: Boolean!
+
+  "The target paired investments. Available when `hasBeenReconstituted` is `false` (reconstitution date is in the future)."
+  pairedDismemberments: PairedDismemberments
+
+  "The deleted item infos to let Apollo update its cache. Available when `hasBeenReconstituted` is `true` (reconstitution date is today or past)."
+  deletedDismemberment: ItemDeleted
+}
+
+input GeneralAssemblyResolutionVoteInput {
+  voteResponse: GeneralAssemblyVoteResponse
+  resolutionId: ID!
+  accountId: ID
+
+  "Use `userId` instead of `accountId` to vote for all accounts belonging to a user"
+  userId: ID
+}
+
+"Report for a configurable form import"
+type ConfigurableFormConfigImportReport {
+  "Report of modifications made to the form"
+  diffReport: ConfigurableFormModificationsReport
+
+  "Whether the import was a dry run (hypothetical) or not"
+  isDryRun: Boolean!
+}
+
+"Report for modifications made to configurable form steps (real or hypothetical)"
+type ConfigurableFormModificationsReport {
+  "List of steps that are\/would be added\/removed\/modified"
+  steps: ConfigurableFormItemModificationReport!
+}
+
+"Report for modifications made to configurable form items (real or hypothetical)"
+type ConfigurableFormItemModificationReport {
+  "List of items that are\/would be added"
+  itemsAdded: Int!
+
+  "List of items that are\/would be modified"
+  itemsModified: Int!
+
+  "List of items that are\/would be removed"
+  itemsDeleted: Int!
+}
